@@ -39,10 +39,16 @@ follows the selected node, so **the built config carries no node/proxy secrets**
   injected at the **top of `[Rule]`** as `DOMAIN-SUFFIX,<d>,PROXY`, winning over both
   `GEOIP,CN` and the ad `Reject` list. (First case: 小红书, diagnosed from a
   PacketTunnel log on 2026-07-15.)
-- **DNS.** 境外 traffic (DIRECT) uses the local `dns-server`; the builder can override it
-  with your **NextDNS** DoH URL (`--dns`). 境内 traffic goes through the China node and is
-  resolved node-side (set the node's resolver to a CN DNS, e.g. Ali `223.5.5.5` — that is
-  the vps repo's concern, not this one).
+- **China-domain list, inlined.** To make CN traffic route (and resolve) via the node
+  instead of relying on `GEOIP,CN` — which forces a local/境外 DNS lookup and re-leaks CDN
+  services — the builder inline-expands felixonmars `accelerated-domains.china.conf`
+  (~111k domains) as `DOMAIN-SUFFIX,<d>,PROXY`, placed **below the ad `Reject` list** so
+  境内 ad-block still wins. Output is ~5.6 MiB; `--china-mode off` disables it. See
+  `targets/shadowrocket/README.md` and TODO (rule-set delivery) for the size trade-off.
+- **DNS.** 境外 traffic (DIRECT) uses the local `dns-server` = your **NextDNS** DoH URL
+  (`--dns`). 境内 traffic is matched by domain and routed to the China node, so it is
+  resolved node-side — set the node's resolver to a CN DNS (Ali `223.5.5.5`); that is the
+  vps repo's concern, not this one. This is why CN names never hit NextDNS.
 
 ## Layout
 

@@ -23,8 +23,14 @@ locally and in CI (build + artifact). Delivery to yyz and NextDNS injection are 
 
 ## Backlog
 
+- [ ] **rule-set delivery for the China list (size).** Inline output is ~5.6 MiB / ~168k
+      lines. If Shadowrocket load/matching gets sluggish, host the expanded China list on
+      yyz (or convert felixonmars) and reference it as a single `RULE-SET,<url>,PROXY`
+      instead of inlining. The builder already has the seam (`--china-mode`); add a
+      `rule-set` mode that emits the RULE-SET line + publishes the list file.
 - [ ] **sing-box (Android) target.** New emitter under `targets/sing-box/` consuming
-      `rules/redirect-to-cn.list`; pick a maintained 回国 sing-box base; add a CI job.
+      `rules/redirect-to-cn.list` (and the same China list); pick a maintained 回国 sing-box
+      base; add a CI job.
 - [ ] **Grow `redirect-to-cn.list`** as more CN services leak via overseas CDN (diagnose
       from PacketTunnel logs, same method as 小红书).
 - [ ] **Optional: also build the normal 翻墙 profile** (`sr_cnip_ad.conf`) so the owner can
