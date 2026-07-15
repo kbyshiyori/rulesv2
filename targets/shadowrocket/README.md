@@ -46,7 +46,8 @@ python build.py --rules ../../rules/redirect-to-cn.list --out ../../dist/shadowr
 
 ## Device setup (Shadowrocket)
 
-1. Subscribe to the built config URL (Config tab → `+`).
+1. Subscribe to the built config URL (Config tab → `+`):
+   `https://kbyshiyori.github.io/rulesv2/backcn.conf` (published by CI on each build).
 2. Add / select your **China node**; set it to *use config*. `PROXY` rules follow it, so
    no node/proxy is stored in the config.
 3. Set the China node's own resolver to a CN DNS (e.g. Ali `223.5.5.5`) so the CN domains
