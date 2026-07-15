@@ -54,7 +54,7 @@ follows the selected node, so **the built config carries no node/proxy secrets**
 
 ```
 rules/redirect-to-cn.list      # client-agnostic: domains that must exit via the CN node
-targets/shadowrocket/build.py  # emits the Shadowrocket backcn.conf
+targets/shadowrocket/build.py  # emits the Shadowrocket sr-backcn.conf
 targets/sing-box/              # planned Android emitter (stub)
 .github/workflows/build.yml    # daily cron + on-push build, publish to GitHub Pages
 dist/                          # local build output (gitignored)
@@ -65,17 +65,17 @@ dist/                          # local build output (gitignored)
 ```sh
 python targets/shadowrocket/build.py \
   --rules rules/redirect-to-cn.list \
-  --out dist/shadowrocket/backcn.conf
+  --out dist/shadowrocket/sr-backcn.conf
 # add --dns "$NEXTDNS_DOH_URL" to inject NextDNS
 # add --upstream-file <path> to build offline from a saved upstream
 ```
 
 ## Delivery
 
-CI builds on a daily cron (and on push) and publishes `backcn.conf` to **GitHub Pages**:
+CI builds on a daily cron (and on push) and publishes `sr-backcn.conf` to **GitHub Pages**:
 
 ```
-https://kbyshiyori.github.io/rulesv2/backcn.conf
+https://kbyshiyori.github.io/rulesv2/sr-backcn.conf
 ```
 
 Subscribe Shadowrocket to that URL (Config tab → `+`). Pages gives auto-TLS + CDN and no

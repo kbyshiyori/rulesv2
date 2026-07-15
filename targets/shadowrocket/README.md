@@ -38,7 +38,7 @@ local escape hatch: `--china-mode off` builds without the broad list (keeps redi
 ## Usage
 
 ```sh
-python build.py --rules ../../rules/redirect-to-cn.list --out ../../dist/shadowrocket/backcn.conf
+python build.py --rules ../../rules/redirect-to-cn.list --out ../../dist/shadowrocket/sr-backcn.conf
 # --dns "$NEXTDNS_DOH_URL"        inject 境外 DNS (else keep upstream)
 # --china-mode off                skip the broad China list
 # --upstream-file / --china-list-file <path>   build offline from saved copies
@@ -47,7 +47,7 @@ python build.py --rules ../../rules/redirect-to-cn.list --out ../../dist/shadowr
 ## Device setup (Shadowrocket)
 
 1. Subscribe to the built config URL (Config tab → `+`):
-   `https://kbyshiyori.github.io/rulesv2/backcn.conf` (published by CI on each build).
+   `https://kbyshiyori.github.io/rulesv2/sr-backcn.conf` (published by CI on each build).
 2. Add / select your **China node**; set it to *use config*. `PROXY` rules follow it, so
    no node/proxy is stored in the config.
 3. Set the China node's own resolver to a CN DNS (e.g. Ali `223.5.5.5`) so the CN domains

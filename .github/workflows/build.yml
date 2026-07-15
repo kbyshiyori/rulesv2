@@ -43,7 +43,7 @@ jobs:
           python targets/shadowrocket/build.py \
             --rules rules/redirect-to-cn.list \
             --dns "$NEXTDNS_DOH_URL" \
-            --out _site/backcn.conf
+            --out _site/sr-backcn.conf
 
       # enablement:true turns Pages on (Source: GitHub Actions) via API on first run,
       # so no manual Settings step is needed — repo must be public (or Pages-enabled plan).

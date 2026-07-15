@@ -34,10 +34,10 @@ small, reviewable, and secret-free.
 
 ```sh
 python targets/shadowrocket/build.py --rules rules/redirect-to-cn.list \
-  --out /tmp/backcn.conf
-grep -n 'rulesv2 redirect-to-cn' /tmp/backcn.conf      # markers present once
-grep -n 'DOMAIN-SUFFIX,xiaohongshu.com,PROXY' /tmp/backcn.conf   # rules injected
-grep -n '^\[Rule\]' /tmp/backcn.conf                   # injected right after [Rule]
+  --out /tmp/sr-backcn.conf
+grep -n 'rulesv2 redirect-to-cn' /tmp/sr-backcn.conf      # markers present once
+grep -n 'DOMAIN-SUFFIX,xiaohongshu.com,PROXY' /tmp/sr-backcn.conf   # rules injected
+grep -n '^\[Rule\]' /tmp/sr-backcn.conf                   # injected right after [Rule]
 ```
 
 For a DNS change also pass `--dns 'https://dns.nextdns.io/PLACEHOLDER'` and confirm the
@@ -53,7 +53,7 @@ secret at deploy).
 
 ## Delivery
 
-CI publishes the built `backcn.conf` to **GitHub Pages**
-(`https://kbyshiyori.github.io/rulesv2/backcn.conf`) via `actions/deploy-pages`. There is
+CI publishes the built `sr-backcn.conf` to **GitHub Pages**
+(`https://kbyshiyori.github.io/rulesv2/sr-backcn.conf`) via `actions/deploy-pages`. There is
 no SSH/rsync deploy and no delivery server to manage. Node/DNS config on the China relay
 lives in the owner's separate `vps` repo; this repo only owns rule/config generation.

@@ -15,7 +15,7 @@ end-to-end locally and in CI, which now **publishes the built config to GitHub P
 - [x] **Set GitHub Actions secret** — done 2026-07-15: `NEXTDNS_DOH_URL`. (The former
       `YYZ_*` SSH/rsync secrets are no longer used and can be deleted from repo settings.)
 - [ ] **Confirm the published URL.** After a green run, `curl -sI
-      https://kbyshiyori.github.io/rulesv2/backcn.conf` returns 200 and the body starts
+      https://kbyshiyori.github.io/rulesv2/sr-backcn.conf` returns 200 and the body starts
       with the Johnshall header + injected `dns-server`/redirect-to-cn block.
 - [ ] **Verify on device**: subscribe Shadowrocket to the Pages URL, restart 小红书, confirm
       `edith/www/fe-static/...xiaohongshu.com|xhscdn.com` now hit the injected PROXY rule
@@ -28,7 +28,7 @@ end-to-end locally and in CI, which now **publishes the built config to GitHub P
       as a second Pages file (or convert felixonmars) and reference it as a single
       `RULE-SET,<url>,PROXY` instead of inlining. The builder already has the seam
       (`--china-mode`); add a `rule-set` mode that emits the RULE-SET line + publishes the
-      list file alongside `backcn.conf`.
+      list file alongside `sr-backcn.conf`.
 - [ ] **sing-box (Android) target.** New emitter under `targets/sing-box/` consuming
       `rules/redirect-to-cn.list` (and the same China list); pick a maintained 回国 sing-box
       base; add a CI job.

@@ -8,7 +8,7 @@ Pipeline:
        Reject list and BEFORE FINAL (so 境内 ad-block still wins, but CN domains route via
        the node and are resolved node-side, never by the local/境外 DNS)
     -> optionally override [General] dns-server with a NextDNS DoH URL (境外 DNS)
-    -> write dist/shadowrocket/backcn.conf
+    -> write dist/shadowrocket/sr-backcn.conf
 
 Why the two blocks sit in different places:
   Shadowrocket evaluates DOMAIN-type rules ahead of GEOIP/IP rules, and among domain rules
@@ -48,7 +48,6 @@ RC_BEGIN = "# >>> rulesv2 redirect-to-cn (auto-generated) >>>"
 RC_END = "# <<< rulesv2 redirect-to-cn <<<"
 CN_BEGIN = "# >>> rulesv2 china-domains (auto-generated, inlined) >>>"
 CN_END = "# <<< rulesv2 china-domains <<<"
-CN_FALLBACK_DNS = "https://dns.alidns.com/dns-query"
 
 
 def read_upstream(url: str, file: str | None) -> str:
@@ -131,7 +130,7 @@ def inject_china(text: str, domains: list[str]) -> str:
 def set_dns(text: str, dns_url: str) -> str:
     if not dns_url:
         return text
-    new_line = f"dns-server = {dns_url}, {CN_FALLBACK_DNS}\n"
+    new_line = f"dns-server = {dns_url}\n"
     lines = text.splitlines(keepends=True)
     in_general = False
     for i, line in enumerate(lines):
