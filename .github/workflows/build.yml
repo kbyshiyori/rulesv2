@@ -18,12 +18,12 @@ jobs:
     env:
       # NextDNS DoH URL (境外 DNS). Empty until the secret is set -> upstream DNS is kept.
       NEXTDNS_DOH_URL: ${{ secrets.NEXTDNS_DOH_URL }}
-      # yyz delivery. Deploy step is skipped until YYZ_SSH_KEY + YYZ_HOST are set.
+      # yyz delivery. Deploy is skipped until YYZ_SSH_KEY + YYZ_SSH_HOST + YYZ_DEST are set.
       YYZ_SSH_KEY: ${{ secrets.YYZ_SSH_KEY }}
-      YYZ_KNOWN_HOSTS: ${{ secrets.YYZ_KNOWN_HOSTS }}
-      YYZ_USER: ${{ secrets.YYZ_USER }}
-      YYZ_HOST: ${{ secrets.YYZ_HOST }}
-      YYZ_DEST: ${{ secrets.YYZ_DEST }}
+      YYZ_SSH_HOST: ${{ secrets.YYZ_SSH_HOST }}
+      YYZ_SSH_USER: ${{ secrets.YYZ_SSH_USER }}
+      YYZ_KNOWN_HOSTS: ${{ secrets.YYZ_KNOWN_HOSTS }}   # optional; falls back to accept-new
+      YYZ_DEST: ${{ secrets.YYZ_DEST }}                 # full remote file path, e.g. /srv/rulesv2/<rand>/backcn.conf
     steps:
       - uses: actions/checkout@v4
 
@@ -46,17 +46,20 @@ jobs:
           if-no-files-found: error
 
       - name: Deploy to yyz
-        if: ${{ env.YYZ_SSH_KEY != '' && env.YYZ_HOST != '' }}
+        if: ${{ env.YYZ_SSH_KEY != '' && env.YYZ_SSH_HOST != '' && env.YYZ_DEST != '' }}
         run: |
           install -d -m 700 ~/.ssh
           printf '%s\n' "$YYZ_SSH_KEY" > ~/.ssh/id_deploy
           chmod 600 ~/.ssh/id_deploy
           if [ -n "$YYZ_KNOWN_HOSTS" ]; then
             printf '%s\n' "$YYZ_KNOWN_HOSTS" > ~/.ssh/known_hosts
-            SSH_OPTS="-i ~/.ssh/id_deploy -o UserKnownHostsFile=$HOME/.ssh/known_hosts"
+            SSH_OPTS="-i $HOME/.ssh/id_deploy -o UserKnownHostsFile=$HOME/.ssh/known_hosts"
           else
-            SSH_OPTS="-i ~/.ssh/id_deploy -o StrictHostKeyChecking=accept-new"
+            SSH_OPTS="-i $HOME/.ssh/id_deploy -o StrictHostKeyChecking=accept-new"
           fi
+          TARGET="$YYZ_SSH_USER@$YYZ_SSH_HOST"
+          DEST_DIR="$(dirname "$YYZ_DEST")"
+          ssh $SSH_OPTS "$TARGET" "mkdir -p '$DEST_DIR'"
           rsync -avz -e "ssh $SSH_OPTS" \
             dist/shadowrocket/backcn.conf \
-            "$YYZ_USER@$YYZ_HOST:$YYZ_DEST"
+            "$TARGET:$YYZ_DEST"

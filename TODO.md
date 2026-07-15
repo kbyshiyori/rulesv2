@@ -8,12 +8,14 @@ locally and in CI (build + artifact). Delivery to yyz and NextDNS injection are 
 
 - [ ] **Push the initial commit.** Scaffold is committed locally on `main`, not pushed.
       `git push -u origin main`.
-- [ ] **Set GitHub Actions secrets** (repo → Settings → Secrets and variables → Actions):
-  - [ ] `NEXTDNS_DOH_URL` — from NextDNS setup page (DNS-over-HTTPS URL).
-  - [ ] `YYZ_SSH_KEY` — a **deploy-only** private key; add its public key to
-        `~/.ssh/authorized_keys` for the target user on yyz.
-  - [ ] `YYZ_HOST` (REDACTED), `YYZ_USER`, `YYZ_DEST` (web root path),
-        `YYZ_KNOWN_HOSTS` (`ssh-keyscan yyz`).
+- [x] **Set GitHub Actions secrets** — done 2026-07-15: `NEXTDNS_DOH_URL`, `YYZ_SSH_HOST`,
+      `YYZ_SSH_KEY`, `YYZ_SSH_USER`; deploy public key added to yyz authorized_keys.
+  - [ ] `YYZ_DEST` — full remote file path Caddy will serve, unguessable segment
+        recommended, e.g. `/srv/rulesv2/<rand>/backcn.conf`. Ensure the parent dir is
+        writable by `YYZ_SSH_USER` (or use a `~/...` home path). Deploy stays skipped
+        until this is set.
+  - [ ] `YYZ_KNOWN_HOSTS` — optional; `ssh-keyscan REDACTED` output. Empty =
+        accept-new (trust on first connect).
 - [ ] **Stand up HTTPS delivery on yyz.** Caddy (auto-TLS) serving the deployed conf at an
       unguessable path; needs a domain. Then subscribe Shadowrocket to that URL. Consider
       mirroring to the China node for faster in-CN fetches.

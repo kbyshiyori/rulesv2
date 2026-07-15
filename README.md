@@ -83,7 +83,11 @@ Never committed. Set as GitHub Actions repo secrets (names mirror
 [`.env.example`](.env.example)):
 
 - `NEXTDNS_DOH_URL` — 境外 DNS. Semi-secret (embeds config id).
-- `YYZ_SSH_KEY`, `YYZ_KNOWN_HOSTS`, `YYZ_USER`, `YYZ_HOST`, `YYZ_DEST` — yyz delivery.
+- `YYZ_SSH_KEY`, `YYZ_SSH_HOST`, `YYZ_SSH_USER`, `YYZ_DEST` — yyz delivery. `YYZ_DEST` is
+  the full remote file path Caddy serves (put an unguessable segment in it, e.g.
+  `/srv/rulesv2/<rand>/backcn.conf`). `YYZ_KNOWN_HOSTS` is optional (`ssh-keyscan
+  <YYZ_SSH_HOST>`; empty falls back to accept-new). Deploy runs only when KEY + HOST +
+  DEST are all set.
 
 The build artifact and any deployed file may contain `NEXTDNS_DOH_URL`; keep them
 private (Actions artifacts are repo-scoped; serve the deployed copy over an unguessable
