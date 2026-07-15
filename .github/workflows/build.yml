@@ -58,8 +58,9 @@ jobs:
             SSH_OPTS="-i $HOME/.ssh/id_deploy -o StrictHostKeyChecking=accept-new"
           fi
           TARGET="$YYZ_SSH_USER@$YYZ_SSH_HOST"
-          DEST_DIR="$(dirname "$YYZ_DEST")"
-          ssh $SSH_OPTS "$TARGET" "mkdir -p '$DEST_DIR'"
+          # Let the REMOTE shell expand ~ and compute the parent dir. Path must not
+          # contain spaces (YYZ_DEST is a single unquoted word on the remote side).
+          ssh $SSH_OPTS "$TARGET" "mkdir -p \"\$(dirname $YYZ_DEST)\""
           rsync -avz -e "ssh $SSH_OPTS" \
             dist/shadowrocket/backcn.conf \
             "$TARGET:$YYZ_DEST"
