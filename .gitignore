@@ -1,0 +1,14 @@
+# Build output — never commit (may carry the injected NextDNS DoH URL).
+dist/
+
+# Local secrets / env
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.pyc
+
+# macOS
+.DS_Store

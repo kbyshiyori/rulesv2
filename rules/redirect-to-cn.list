@@ -1,0 +1,22 @@
+# redirect-to-cn: domains that MUST exit via the China node (回国 / backcn).
+#
+# Format: one domain suffix per line. '#' comments and blank lines are ignored.
+# Each target builder translates these into its own "route via CN node" rule:
+#   Shadowrocket -> DOMAIN-SUFFIX,<d>,PROXY   (injected at the TOP of [Rule],
+#                                              so it wins over GEOIP and the ad Reject list)
+#   sing-box     -> (future) route rule -> cn outbound
+#
+# WHY these need to be explicit instead of relying on GEOIP,CN:
+#   These services sit on global CDNs (Akamai / Tencent EdgeOne overseas nodes). When you
+#   are abroad, DNS resolves them to a nearby *overseas* edge IP, so GEOIP,CN classifies
+#   them as foreign and leaks them to DIRECT -> the app sees a foreign IP.
+#   Routing by DOMAIN forces resolution + egress on the China node instead.
+#   (Confirmed via Shadowrocket PacketTunnel log 2026-07-15: edith/www/fe-static/so/
+#    pages/t2/sns-* .xiaohongshu.com / .xhscdn.com all hit FINAL,DIRECT before this fix.)
+
+# 小红书 / RED / rednote
+xiaohongshu.com
+xhscdn.com
+xhslink.com
+xhs.cn
+fegine.com

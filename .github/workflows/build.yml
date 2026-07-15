@@ -1,0 +1,62 @@
+name: build-rules
+
+on:
+  schedule:
+    # Johnshall rebuilds upstream ~08:00 Beijing (00:00 UTC); build a bit after.
+    - cron: "0 1 * * *"
+  workflow_dispatch: {}
+  push:
+    branches: [main]
+    paths:
+      - "rules/**"
+      - "targets/**"
+      - ".github/workflows/build.yml"
+
+jobs:
+  shadowrocket:
+    runs-on: ubuntu-latest
+    env:
+      # NextDNS DoH URL (境外 DNS). Empty until the secret is set -> upstream DNS is kept.
+      NEXTDNS_DOH_URL: ${{ secrets.NEXTDNS_DOH_URL }}
+      # yyz delivery. Deploy step is skipped until YYZ_SSH_KEY + YYZ_HOST are set.
+      YYZ_SSH_KEY: ${{ secrets.YYZ_SSH_KEY }}
+      YYZ_KNOWN_HOSTS: ${{ secrets.YYZ_KNOWN_HOSTS }}
+      YYZ_USER: ${{ secrets.YYZ_USER }}
+      YYZ_HOST: ${{ secrets.YYZ_HOST }}
+      YYZ_DEST: ${{ secrets.YYZ_DEST }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Build Shadowrocket backcn config
+        run: |
+          python targets/shadowrocket/build.py \
+            --rules rules/redirect-to-cn.list \
+            --dns "$NEXTDNS_DOH_URL" \
+            --out dist/shadowrocket/backcn.conf
+
+      - name: Upload artifact (for review)
+        uses: actions/upload-artifact@v4
+        with:
+          name: shadowrocket-backcn
+          path: dist/shadowrocket/backcn.conf
+          if-no-files-found: error
+
+      - name: Deploy to yyz
+        if: ${{ env.YYZ_SSH_KEY != '' && env.YYZ_HOST != '' }}
+        run: |
+          install -d -m 700 ~/.ssh
+          printf '%s\n' "$YYZ_SSH_KEY" > ~/.ssh/id_deploy
+          chmod 600 ~/.ssh/id_deploy
+          if [ -n "$YYZ_KNOWN_HOSTS" ]; then
+            printf '%s\n' "$YYZ_KNOWN_HOSTS" > ~/.ssh/known_hosts
+            SSH_OPTS="-i ~/.ssh/id_deploy -o UserKnownHostsFile=$HOME/.ssh/known_hosts"
+          else
+            SSH_OPTS="-i ~/.ssh/id_deploy -o StrictHostKeyChecking=accept-new"
+          fi
+          rsync -avz -e "ssh $SSH_OPTS" \
+            dist/shadowrocket/backcn.conf \
+            "$YYZ_USER@$YYZ_HOST:$YYZ_DEST"
