@@ -56,8 +56,8 @@ follows the selected node, so **the built config carries no node/proxy secrets**
 rules/redirect-to-cn.list      # client-agnostic: domains that must exit via the CN node
 targets/shadowrocket/build.py  # emits the Shadowrocket backcn.conf
 targets/sing-box/              # planned Android emitter (stub)
-.github/workflows/build.yml    # daily cron + on-push build, artifact, deploy to yyz
-dist/                          # build output (gitignored)
+.github/workflows/build.yml    # daily cron + on-push build, publish to GitHub Pages
+dist/                          # local build output (gitignored)
 ```
 
 ## Build locally
@@ -70,25 +70,28 @@ python targets/shadowrocket/build.py \
 # add --upstream-file <path> to build offline from a saved upstream
 ```
 
-## Delivery (planned)
+## Delivery
 
-CI builds on a daily cron and rsyncs `dist/shadowrocket/backcn.conf` to **yyz**
-(`ssh yyz`, Oracle aarch64 ops host), served over HTTPS at an unguessable path. Then
-Shadowrocket subscribes to that URL. Deploy is inert until the secrets below are set —
-see [`TODO.md`](TODO.md).
+CI builds on a daily cron (and on push) and publishes `backcn.conf` to **GitHub Pages**:
+
+```
+https://kbyshiyori.github.io/rulesv2/backcn.conf
+```
+
+Subscribe Shadowrocket to that URL (Config tab → `+`). Pages gives auto-TLS + CDN and no
+server to run. The Pages site is public, so the published config — **including the
+injected `NEXTDNS_DOH_URL`** — is public by design (see below).
 
 ## Secrets
 
-Never committed. Set as GitHub Actions repo secrets (names mirror
-[`.env.example`](.env.example)):
+The source tree is secret-free. The one build input is a GitHub Actions repo secret (name
+mirrors [`.env.example`](.env.example)):
 
-- `NEXTDNS_DOH_URL` — 境外 DNS. Semi-secret (embeds config id).
-- `YYZ_SSH_KEY`, `YYZ_SSH_HOST`, `YYZ_SSH_USER`, `YYZ_DEST` — yyz delivery. `YYZ_DEST` is
-  the full remote file path Caddy serves (put an unguessable segment in it, e.g.
-  `/srv/rulesv2/<rand>/backcn.conf`). `YYZ_KNOWN_HOSTS` is optional (`ssh-keyscan
-  <YYZ_SSH_HOST>`; empty falls back to accept-new). Deploy runs only when KEY + HOST +
-  DEST are all set.
+- `NEXTDNS_DOH_URL` — 境外 DNS DoH URL (embeds a NextDNS config id). It is injected into
+  the built config at build time. Since the built config is served publicly on Pages, this
+  URL is **public by design** — accepted because it only selects an ad-block config; a
+  stranger using it just shares this config's blocklists and counts against its NextDNS
+  query quota. Rotate the config id if that ever becomes a problem. Keep the URL out of the
+  *source tree* regardless; set it only as the Actions secret.
 
-The build artifact and any deployed file may contain `NEXTDNS_DOH_URL`; keep them
-private (Actions artifacts are repo-scoped; serve the deployed copy over an unguessable
-HTTPS path).
+Publishing is intentional here — there is no private/"unguessable path" delivery anymore.

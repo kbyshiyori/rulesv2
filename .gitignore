@@ -1,5 +1,6 @@
 # Build output — never commit (may carry the injected NextDNS DoH URL).
 dist/
+_site/
 
 # Local secrets / env
 .env

@@ -1,35 +1,34 @@
 # TODO
 
-Handoff state (2026-07-15): repo scaffolded. The Shadowrocket builder works end-to-end
-locally and in CI (build + artifact). Delivery to yyz and NextDNS injection are wired but
-**inert until secrets are set**.
+Handoff state (2026-07-15): repo pushed to `main`. The Shadowrocket builder works
+end-to-end locally and in CI, which now **publishes the built config to GitHub Pages**
+(delivery pivoted off the old yyz/rsync path). NextDNS injection is wired via the
+`NEXTDNS_DOH_URL` secret.
 
 ## Next up
 
-- [ ] **Push the initial commit.** Scaffold is committed locally on `main`, not pushed.
-      `git push -u origin main`.
-- [x] **Set GitHub Actions secrets** — done 2026-07-15: `NEXTDNS_DOH_URL`, `YYZ_SSH_HOST`,
-      `YYZ_SSH_KEY`, `YYZ_SSH_USER`; deploy public key added to yyz authorized_keys.
-  - [ ] `YYZ_DEST` — full remote file path Caddy will serve, unguessable segment
-        recommended, e.g. `/srv/rulesv2/<rand>/backcn.conf`. Ensure the parent dir is
-        writable by `YYZ_SSH_USER` (or use a `~/...` home path). Deploy stays skipped
-        until this is set.
-  - [ ] `YYZ_KNOWN_HOSTS` — optional; `ssh-keyscan REDACTED` output. Empty =
-        accept-new (trust on first connect).
-- [ ] **Stand up HTTPS delivery on yyz.** Caddy (auto-TLS) serving the deployed conf at an
-      unguessable path; needs a domain. Then subscribe Shadowrocket to that URL. Consider
-      mirroring to the China node for faster in-CN fetches.
-- [ ] **Verify the deployed conf on device**: re-subscribe, restart 小红书, confirm
+- [ ] **Make the repo public + enable Pages.** Settings → General → make public. The
+      workflow uses `actions/configure-pages@v5` with `enablement: true`, so the first run
+      after going public turns Pages on (Source: GitHub Actions) automatically — no manual
+      Pages setting needed. If enablement is ever blocked, set Settings → Pages → Source:
+      GitHub Actions by hand.
+- [x] **Set GitHub Actions secret** — done 2026-07-15: `NEXTDNS_DOH_URL`. (The former
+      `YYZ_*` SSH/rsync secrets are no longer used and can be deleted from repo settings.)
+- [ ] **Confirm the published URL.** After a green run, `curl -sI
+      https://kbyshiyori.github.io/rulesv2/backcn.conf` returns 200 and the body starts
+      with the Johnshall header + injected `dns-server`/redirect-to-cn block.
+- [ ] **Verify on device**: subscribe Shadowrocket to the Pages URL, restart 小红书, confirm
       `edith/www/fe-static/...xiaohongshu.com|xhscdn.com` now hit the injected PROXY rule
       (egress `240.0.0.x`), not `FINAL,DIRECT`. See the vps repo conversation / log.
 
 ## Backlog
 
 - [ ] **rule-set delivery for the China list (size).** Inline output is ~5.6 MiB / ~168k
-      lines. If Shadowrocket load/matching gets sluggish, host the expanded China list on
-      yyz (or convert felixonmars) and reference it as a single `RULE-SET,<url>,PROXY`
-      instead of inlining. The builder already has the seam (`--china-mode`); add a
-      `rule-set` mode that emits the RULE-SET line + publishes the list file.
+      lines. If Shadowrocket load/matching gets sluggish, publish the expanded China list
+      as a second Pages file (or convert felixonmars) and reference it as a single
+      `RULE-SET,<url>,PROXY` instead of inlining. The builder already has the seam
+      (`--china-mode`); add a `rule-set` mode that emits the RULE-SET line + publishes the
+      list file alongside `backcn.conf`.
 - [ ] **sing-box (Android) target.** New emitter under `targets/sing-box/` consuming
       `rules/redirect-to-cn.list` (and the same China list); pick a maintained 回国 sing-box
       base; add a CI job.

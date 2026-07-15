@@ -8,6 +8,9 @@ small, reviewable, and secret-free.
 - **Never commit secrets.** No NextDNS DoH URL (embeds a config id), no node keys, no SSH
   keys, no `.env`. Secrets live only as GitHub Actions secrets / a local gitignored
   `.env`. `dist/` is gitignored because a built file can carry the injected NextDNS URL.
+  (The CI-built config *is* published to public Pages, so its embedded NextDNS URL is
+  public by accepted decision — that is not a leak. The rule above is about the **source
+  tree**: never put the URL in a committed file.)
 - **The built config carries no proxy/node.** Routing to the China node is done by the
   user selecting a node in Shadowrocket + "use config"; rules just say `PROXY`. Do not add
   a `[Proxy]` section with credentials.
@@ -48,8 +51,9 @@ at the China outbound. Pick a maintained 回国 sing-box base, document it in
 secret-free the same way (outbound/node config stays on the device or is injected from a
 secret at deploy).
 
-## Related infra
+## Delivery
 
-Delivery host is **yyz** (`ssh yyz`, Oracle aarch64 ops host) from the owner's `vps`
-repo. That repo owns node/DNS config on the China relay; this repo only owns rule/config
-generation.
+CI publishes the built `backcn.conf` to **GitHub Pages**
+(`https://kbyshiyori.github.io/rulesv2/backcn.conf`) via `actions/deploy-pages`. There is
+no SSH/rsync deploy and no delivery server to manage. Node/DNS config on the China relay
+lives in the owner's separate `vps` repo; this repo only owns rule/config generation.
