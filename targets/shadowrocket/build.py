@@ -3,6 +3,7 @@
 
 Pipeline:
   upstream Johnshall sr_backcn_ad.conf
+    -> make pikvm.kbyshiyori.com resolve through the system (router) DNS and route DIRECT
     -> inject redirect-to-cn rules at the TOP of [Rule]   (win over GEOIP + ad Reject)
     -> inline-expand a China-domain list as DOMAIN-SUFFIX,<d>,PROXY, placed AFTER the ad
        Reject list and BEFORE FINAL (so 境内 ad-block still wins, but CN domains route via
@@ -48,6 +49,9 @@ RC_BEGIN = "# >>> rulesv2 redirect-to-cn (auto-generated) >>>"
 RC_END = "# <<< rulesv2 redirect-to-cn <<<"
 CN_BEGIN = "# >>> rulesv2 china-domains (auto-generated, inlined) >>>"
 CN_END = "# <<< rulesv2 china-domains <<<"
+LOCAL_BEGIN = "# >>> rulesv2 local-direct (auto-generated) >>>"
+LOCAL_END = "# <<< rulesv2 local-direct <<<"
+LOCAL_DIRECT_DOMAINS = ("pikvm.kbyshiyori.com",)
 
 
 def read_upstream(url: str, file: str | None) -> str:
@@ -103,6 +107,20 @@ def inject_redirect(text: str, domains: list[str]) -> str:
     raise SystemExit("error: [Rule] section not found in upstream")
 
 
+def inject_local_direct(text: str, domains: tuple[str, ...]) -> str:
+    """Put exact local-only domains first so broader PROXY rules cannot win."""
+    text = _strip_block(text, LOCAL_BEGIN, LOCAL_END)
+    block = "\n".join(
+        [LOCAL_BEGIN, *[f"DOMAIN,{domain},DIRECT" for domain in domains], LOCAL_END]
+    ) + "\n"
+    lines = text.splitlines(keepends=True)
+    for i, line in enumerate(lines):
+        if line.strip() == "[Rule]":
+            lines.insert(i + 1, "\n" + block)
+            return "".join(lines)
+    raise SystemExit("error: [Rule] section not found in upstream")
+
+
 def inject_china(text: str, domains: list[str]) -> str:
     text = _strip_block(text, CN_BEGIN, CN_END)
     if not domains:
@@ -148,6 +166,45 @@ def set_dns(text: str, dns_url: str) -> str:
     return text
 
 
+def set_general_value(text: str, key: str, value: str) -> str:
+    """Set one [General] scalar, adding it when the upstream omits it."""
+    new_line = f"{key} = {value}\n"
+    lines = text.splitlines(keepends=True)
+    in_general = False
+    for i, line in enumerate(lines):
+        s = line.strip()
+        if s.startswith("[") and s.endswith("]"):
+            in_general = s == "[General]"
+            continue
+        if in_general and s.partition("=")[0].strip() == key:
+            lines[i] = new_line
+            return "".join(lines)
+    for i, line in enumerate(lines):
+        if line.strip() == "[General]":
+            lines.insert(i + 1, new_line)
+            return "".join(lines)
+    raise SystemExit("error: [General] section not found in upstream")
+
+
+def add_general_list_values(text: str, key: str, values: tuple[str, ...]) -> str:
+    """Append missing comma-separated [General] values without removing upstream ones."""
+    lines = text.splitlines(keepends=True)
+    in_general = False
+    for i, line in enumerate(lines):
+        s = line.strip()
+        if s.startswith("[") and s.endswith("]"):
+            in_general = s == "[General]"
+            continue
+        lhs, separator, rhs = s.partition("=")
+        if in_general and separator and lhs.strip() == key:
+            current = [item.strip() for item in rhs.split(",") if item.strip()]
+            seen = set(current)
+            current.extend(value for value in values if value not in seen)
+            lines[i] = f"{key} = {', '.join(current)}\n"
+            return "".join(lines)
+    return set_general_value(text, key, ", ".join(values))
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--upstream-url", default=DEFAULT_UPSTREAM)
@@ -172,7 +229,11 @@ def main() -> int:
                if args.china_list_file else _fetch(args.china_list_url))
         china = parse_china_list(raw, exclude=redirect)
 
+    text = set_general_value(text, "dns-direct-system", "true")
+    text = add_general_list_values(text, "always-real-ip", LOCAL_DIRECT_DOMAINS)
     text = inject_redirect(text, redirect)
+    # Inject after redirect so this block lands above it at the top of [Rule].
+    text = inject_local_direct(text, LOCAL_DIRECT_DOMAINS)
     text = inject_china(text, china)
     text = set_dns(text, args.dns)
 
