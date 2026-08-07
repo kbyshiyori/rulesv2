@@ -34,6 +34,7 @@ small, reviewable, and secret-free.
 
 ```sh
 python targets/shadowrocket/build.py --rules rules/redirect-to-cn.list \
+  --direct-rules rules/direct.list \
   --out /tmp/sr-backcn.conf
 grep -n 'rulesv2 redirect-to-cn' /tmp/sr-backcn.conf      # markers present once
 grep -n 'DOMAIN-SUFFIX,xiaohongshu.com,PROXY' /tmp/sr-backcn.conf   # rules injected

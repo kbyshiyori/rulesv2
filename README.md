@@ -39,6 +39,10 @@ follows the selected node, so **the built config carries no node/proxy secrets**
   injected at the **top of `[Rule]`** as `DOMAIN-SUFFIX,<d>,PROXY`, winning over both
   `GEOIP,CN` and the ad `Reject` list. (First case: 小红书, diagnosed from a
   PacketTunnel log on 2026-07-15.)
+- **Explicit local DIRECT exceptions.** [`rules/direct.list`](rules/direct.list) holds
+  exact IP exceptions that must bypass the China node. The first case is 原神 PC 国服 via
+  YAAGL: only the two observed game addresses are `DIRECT`; its `mihoyo.com` and
+  `yuanshen.com` web services retain their normal `PROXY` routing.
 - **China-domain list, inlined.** To make CN traffic route (and resolve) via the node
   instead of relying on `GEOIP,CN` — which forces a local/境外 DNS lookup and re-leaks CDN
   services — the builder inline-expands felixonmars `accelerated-domains.china.conf`
@@ -54,6 +58,7 @@ follows the selected node, so **the built config carries no node/proxy secrets**
 
 ```
 rules/redirect-to-cn.list      # client-agnostic: domains that must exit via the CN node
+rules/direct.list              # client-agnostic: exact IPs that must use local DIRECT
 targets/shadowrocket/build.py  # emits the Shadowrocket sr-backcn.conf
 targets/sing-box/              # planned Android emitter (stub)
 .github/workflows/build.yml    # daily cron + on-push build, publish to GitHub Pages
@@ -65,6 +70,7 @@ dist/                          # local build output (gitignored)
 ```sh
 python targets/shadowrocket/build.py \
   --rules rules/redirect-to-cn.list \
+  --direct-rules rules/direct.list \
   --out dist/shadowrocket/sr-backcn.conf
 # add --dns "$NEXTDNS_DOH_URL" to inject NextDNS
 # add --upstream-file <path> to build offline from a saved upstream

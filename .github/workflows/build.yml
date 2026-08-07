@@ -42,6 +42,7 @@ jobs:
         run: |
           python targets/shadowrocket/build.py \
             --rules rules/redirect-to-cn.list \
+            --direct-rules rules/direct.list \
             --dns "$NEXTDNS_DOH_URL" \
             --out _site/sr-backcn.conf
 

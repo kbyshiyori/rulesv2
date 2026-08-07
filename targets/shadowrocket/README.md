@@ -16,11 +16,14 @@ Emits the Shadowrocket 回国 / backcn config.
    `pikvm.kbyshiyori.com` to `always-real-ip`, and inject
    `DOMAIN,pikvm.kbyshiyori.com,DIRECT` at the top of `[Rule]`. This makes the home
    router's DNS/Hosts answer win instead of returning a Shadowrocket Fake IP.
-3. **redirect-to-cn block** — inject `DOMAIN-SUFFIX,<d>,PROXY` for every domain in
+3. **direct block** — translate `rules/direct.list` exact IP intents into
+   `IP-CIDR,<address>/32,DIRECT,no-resolve` rules at the top of `[Rule]`. These explicit
+   exceptions override `GEOIP,CN,PROXY` without changing domain routing.
+4. **redirect-to-cn block** — inject `DOMAIN-SUFFIX,<d>,PROXY` for every domain in
    `rules/redirect-to-cn.list` at the **top of `[Rule]`** (inside `>>> ... <<<` markers,
    idempotent). Top placement wins over `GEOIP,CN` and the ad `Reject` list — these are the
    services that must work fully, and they are not ad domains.
-4. **china-domains block** — inline-expand the China list to `DOMAIN-SUFFIX,<d>,PROXY`,
+5. **china-domains block** — inline-expand the China list to `DOMAIN-SUFFIX,<d>,PROXY`,
    placed **after the ad `Reject` list and before `FINAL`**. This ordering is deliberate:
    Shadowrocket evaluates domain rules by file order, so putting the broad CN list *below*
    the ~56k `Reject` rules keeps 境内 ad-block winning (e.g. `mobads.baidu.com,Reject`
@@ -28,8 +31,8 @@ Emits the Shadowrocket 回国 / backcn config.
    - Effect: CN domains route via the node **by name**, so they are resolved node-side
      (set the node's resolver to a CN DNS, e.g. Ali `223.5.5.5`) and never hit the local
      境外 DNS. `GEOIP,CN` becomes a thin fallback for names not in the list.
-5. If `--dns` is given, replace the `[General]` `dns-server`.
-6. Write `--out`.
+6. If `--dns` is given, replace the `[General]` `dns-server`.
+7. Write `--out`.
 
 ## Size / performance
 
@@ -42,7 +45,10 @@ local escape hatch: `--china-mode off` builds without the broad list (keeps redi
 ## Usage
 
 ```sh
-python build.py --rules ../../rules/redirect-to-cn.list --out ../../dist/shadowrocket/sr-backcn.conf
+python build.py \
+  --rules ../../rules/redirect-to-cn.list \
+  --direct-rules ../../rules/direct.list \
+  --out ../../dist/shadowrocket/sr-backcn.conf
 # --dns "$NEXTDNS_DOH_URL"        inject 境外 DNS (else keep upstream)
 # --china-mode off                skip the broad China list
 # --upstream-file / --china-list-file <path>   build offline from saved copies

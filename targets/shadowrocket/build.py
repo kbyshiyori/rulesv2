@@ -4,6 +4,7 @@
 Pipeline:
   upstream Johnshall sr_backcn_ad.conf
     -> make pikvm.kbyshiyori.com resolve through the system (router) DNS and route DIRECT
+    -> inject explicit DIRECT intents at the TOP of [Rule]
     -> inject redirect-to-cn rules at the TOP of [Rule]   (win over GEOIP + ad Reject)
     -> inline-expand a China-domain list as DOMAIN-SUFFIX,<d>,PROXY, placed AFTER the ad
        Reject list and BEFORE FINAL (so 境内 ad-block still wins, but CN domains route via
@@ -30,6 +31,7 @@ Design notes:
 from __future__ import annotations
 
 import argparse
+import ipaddress
 import re
 import sys
 import urllib.request
@@ -47,6 +49,8 @@ DEFAULT_CHINA_LIST = (
 
 RC_BEGIN = "# >>> rulesv2 redirect-to-cn (auto-generated) >>>"
 RC_END = "# <<< rulesv2 redirect-to-cn <<<"
+DIRECT_BEGIN = "# >>> rulesv2 direct (auto-generated) >>>"
+DIRECT_END = "# <<< rulesv2 direct <<<"
 CN_BEGIN = "# >>> rulesv2 china-domains (auto-generated, inlined) >>>"
 CN_END = "# <<< rulesv2 china-domains <<<"
 LOCAL_BEGIN = "# >>> rulesv2 local-direct (auto-generated) >>>"
@@ -75,6 +79,40 @@ def load_domains(path: str) -> list[str]:
     return domains
 
 
+def load_direct_intents(path: str) -> list[str]:
+    """Translate client-agnostic DIRECT intents into Shadowrocket rules."""
+    rules: list[str] = []
+    for line_number, raw in enumerate(Path(path).read_text(encoding="utf-8").splitlines(), 1):
+        line = raw.strip()
+        if not line or line.startswith("#"):
+            continue
+        fields = [field.strip().lower() for field in line.split(",")]
+        match fields:
+            case ["ip-cidr", network] if network:
+                try:
+                    parsed = ipaddress.ip_network(network, strict=True)
+                except ValueError as exc:
+                    raise SystemExit(
+                        f"error: invalid IP network at {path}:{line_number}: {raw}"
+                    ) from exc
+                if parsed.version != 4:
+                    raise SystemExit(
+                        f"error: ip-cidr requires IPv4 at {path}:{line_number}: {raw}"
+                    )
+                rules.append(f"IP-CIDR,{parsed},DIRECT,no-resolve")
+            case ["domain-suffix", domain] if domain:
+                rules.append(f"DOMAIN-SUFFIX,{domain},DIRECT")
+            case ["protocol-port", protocol, port] if protocol in {"tcp", "udp"}:
+                if not port.isdigit() or not 1 <= int(port) <= 65535:
+                    raise SystemExit(f"error: invalid port at {path}:{line_number}: {raw}")
+                rules.append(
+                    f"AND,((PROTOCOL,{protocol.upper()}),(DST-PORT,{port})),DIRECT"
+                )
+            case _:
+                raise SystemExit(f"error: invalid direct intent at {path}:{line_number}: {raw}")
+    return rules
+
+
 def parse_china_list(text: str, exclude: list[str]) -> list[str]:
     """Parse dnsmasq `server=/<domain>/<dns>` lines into deduped domain suffixes,
     dropping any already covered by an `exclude` suffix (the redirect-to-cn domains)."""
@@ -93,12 +131,30 @@ def parse_china_list(text: str, exclude: list[str]) -> list[str]:
 
 
 def _strip_block(text: str, begin: str, end: str) -> str:
-    return re.sub(re.escape(begin) + r".*?" + re.escape(end) + r"\n?", "", text, flags=re.S)
+    # Consume the separator newline that our injectors add on each side. Without this,
+    # rebuilding from an already-built config preserves one extra blank line per block.
+    return re.sub(
+        r"\n?" + re.escape(begin) + r".*?" + re.escape(end) + r"\n?",
+        "",
+        text,
+        flags=re.S,
+    )
 
 
 def inject_redirect(text: str, domains: list[str]) -> str:
     text = _strip_block(text, RC_BEGIN, RC_END)
     block = "\n".join([RC_BEGIN, *[f"DOMAIN-SUFFIX,{d},PROXY" for d in domains], RC_END]) + "\n"
+    lines = text.splitlines(keepends=True)
+    for i, line in enumerate(lines):
+        if line.strip() == "[Rule]":
+            lines.insert(i + 1, "\n" + block)
+            return "".join(lines)
+    raise SystemExit("error: [Rule] section not found in upstream")
+
+
+def inject_direct(text: str, rules: list[str]) -> str:
+    text = _strip_block(text, DIRECT_BEGIN, DIRECT_END)
+    block = "\n".join([DIRECT_BEGIN, *rules, DIRECT_END]) + "\n"
     lines = text.splitlines(keepends=True)
     for i, line in enumerate(lines):
         if line.strip() == "[Rule]":
@@ -211,6 +267,7 @@ def main() -> int:
     ap.add_argument("--upstream-file", default=None,
                     help="build from a local file instead of fetching (offline/testing)")
     ap.add_argument("--rules", required=True, help="path to redirect-to-cn.list")
+    ap.add_argument("--direct-rules", required=True, help="path to direct.list")
     ap.add_argument("--china-mode", choices=["inline", "off"], default="inline",
                     help="inline-expand the China-domain list into DOMAIN-SUFFIX rules, or skip")
     ap.add_argument("--china-list-url", default=DEFAULT_CHINA_LIST)
@@ -222,6 +279,7 @@ def main() -> int:
 
     text = read_upstream(args.upstream_url, args.upstream_file)
     redirect = load_domains(args.rules)
+    direct = load_direct_intents(args.direct_rules)
 
     china: list[str] = []
     if args.china_mode == "inline":
@@ -232,7 +290,9 @@ def main() -> int:
     text = set_general_value(text, "dns-direct-system", "true")
     text = add_general_list_values(text, "always-real-ip", LOCAL_DIRECT_DOMAINS)
     text = inject_redirect(text, redirect)
-    # Inject after redirect so this block lands above it at the top of [Rule].
+    # Inject after redirect so DIRECT lands above it at the top of [Rule].
+    text = inject_direct(text, direct)
+    # Inject last so the exact local-only domain remains the very first rule.
     text = inject_local_direct(text, LOCAL_DIRECT_DOMAINS)
     text = inject_china(text, china)
     text = set_dns(text, args.dns)
@@ -243,7 +303,8 @@ def main() -> int:
     size_mb = len(text.encode("utf-8")) / 1_048_576
     print(
         f"built {out} ({len(text.splitlines())} lines, {size_mb:.2f} MiB) | "
-        f"redirect-to-cn={len(redirect)} | china={len(china)} ({args.china_mode}) | "
+        f"direct={len(direct)} | redirect-to-cn={len(redirect)} | "
+        f"china={len(china)} ({args.china_mode}) | "
         f"dns={'nextdns' if args.dns else 'upstream'}"
     )
     return 0
