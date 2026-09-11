@@ -32,7 +32,8 @@ Emits Shadowrocket 回国 (`backcn`) and 出国 (`cnip`) configs.
    - Effect: CN domains route via the node **by name**, so they are resolved node-side
      (set the node's resolver to a CN DNS, e.g. Ali `223.5.5.5`) and never hit the local
      境外 DNS. `GEOIP,CN` becomes a thin fallback for names not in the list.
-6. If `--dns` is given, replace the `[General]` `dns-server`.
+6. Set the DIRECT-side `[General]` `dns-server`: `--dns` (NextDNS) for `backcn`, or
+   `--cn-dns` (default `https://223.5.5.5/dns-query`) for `cnip`.
 7. Write `--out`.
 
 The broad inlined China list defaults to on for `backcn` and off for `cnip`, whose
@@ -54,7 +55,8 @@ python build.py \
   --rules ../../rules/redirect-to-cn.list \
   --direct-rules ../../rules/direct.list \
   --out ../../dist/shadowrocket/sr-backcn.conf
-# --dns "$NEXTDNS_DOH_URL"        inject 境外 DNS (else keep upstream)
+# --dns "$NEXTDNS_DOH_URL"        backcn DIRECT DNS (else keep upstream)
+# --cn-dns <url>                  cnip DIRECT DNS (default: AliDNS DoH)
 # --china-mode off                skip the broad China list
 # --upstream-file / --china-list-file <path>   build offline from saved copies
 # --profile cnip                 build the 出国 profile (default: backcn)
@@ -71,4 +73,9 @@ python build.py \
    (NextDNS).
 
 For `sr-cnip.conf`, select an overseas node instead; CN rules remain direct and the final
-fallback follows the selected proxy node.
+fallback follows the selected proxy node. The profile's DIRECT domains use
+`https://223.5.5.5/dns-query`; configure the overseas proxy server to use NextDNS for its
+PROXY-side domain resolution.
+
+Shadowrocket's `proxy-dns-server` is not a PROXY-traffic DNS setting: it resolves the
+proxy node's own hostname. It cannot replace the required node-side resolver setup.

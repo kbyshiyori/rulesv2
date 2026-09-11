@@ -62,10 +62,14 @@ subscription URL. This keeps node credentials out of both git and public Pages.
 - **Clash uses MRS providers.** The native Clash app runs inside Apple's memory-limited
   Network Extension, so the Clash profiles consume MetaCubeX CN-domain, CN-IP, and ad
   rule sets in compiled MRS form instead of inlining ~111k text rules.
-- **DNS.** Shadowrocket `backcn` uses the configured **NextDNS** DoH URL for foreign
-  `DIRECT` traffic while CN domains resolve node-side. Clash uses split DNS explicitly:
-  AliDNS follows the CN route and NextDNS follows the foreign route, reversing their
-  outbound policies between `backcn` and `cnip`.
+- **DNS follows the exit direction.** Clash expresses the full split in YAML. Shadowrocket
+  applies `dns-server` only to `DIRECT` domains, while `PROXY` domains resolve on the
+  selected proxy server; the node-side resolver must therefore match the second column.
+
+  | Profile | `DIRECT` DNS | `PROXY` DNS |
+  |---------|--------------|-------------|
+  | `backcn` | NextDNS | `https://223.5.5.5/dns-query` |
+  | `cnip` | `https://223.5.5.5/dns-query` | NextDNS |
 
 ## Layout
 

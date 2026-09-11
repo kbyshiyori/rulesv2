@@ -20,6 +20,7 @@ ADS_URL = (
     "meta/geo/geosite/category-ads-all.mrs"
 )
 PROVIDER_PLACEHOLDER = "https://example.invalid/replace-with-private-mihomo-profile.yaml"
+CN_DNS = "https://223.5.5.5/dns-query"
 
 
 def load_domains(path: str) -> list[str]:
@@ -103,12 +104,12 @@ def render(profile: str, domains: list[str], direct_rules: list[str], dns: str) 
         "  nameserver:",
         f"    - {quote(foreign_dns + '#' + foreign_dns_route)}",
         "  nameserver-policy:",
-        f"    {quote('rule-set:cn-domain')}: {quote('https://dns.alidns.com/dns-query#' + cn_dns_route)}",
+        f"    {quote('rule-set:cn-domain')}: {quote(CN_DNS + '#' + cn_dns_route)}",
     ]
     for domain in domains:
         lines.append(
             f"    {quote('+.' + domain)}: "
-            f"{quote('https://dns.alidns.com/dns-query#' + cn_dns_route)}"
+            f"{quote(CN_DNS + '#' + cn_dns_route)}"
         )
 
     lines.extend([

@@ -21,6 +21,13 @@ class BuildTests(unittest.TestCase):
         self.assertEqual(once, twice)
         self.assertEqual(twice.count(build.RC_BEGIN), 1)
 
+    def test_direct_dns_reverses_with_profile_direction(self) -> None:
+        nextdns = "https://dns.nextdns.io/PLACEHOLDER"
+        alidns = "https://223.5.5.5/dns-query"
+
+        self.assertEqual(build.direct_dns_for_profile("backcn", nextdns, alidns), nextdns)
+        self.assertEqual(build.direct_dns_for_profile("cnip", nextdns, alidns), alidns)
+
 
 if __name__ == "__main__":
     unittest.main()

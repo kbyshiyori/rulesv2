@@ -13,9 +13,13 @@ class BuildTests(unittest.TestCase):
         self.assertIn("DOMAIN-SUFFIX,xiaohongshu.com,PROXY", backcn)
         self.assertIn("RULE-SET,cn-domain,PROXY", backcn)
         self.assertIn("MATCH,DIRECT", backcn)
+        self.assertIn('"https://dns.example/dns-query#DIRECT"', backcn)
+        self.assertIn('"https://223.5.5.5/dns-query#PROXY"', backcn)
         self.assertIn("DOMAIN-SUFFIX,xiaohongshu.com,DIRECT", cnip)
         self.assertIn("RULE-SET,cn-domain,DIRECT", cnip)
         self.assertIn("MATCH,PROXY", cnip)
+        self.assertIn('"https://dns.example/dns-query#PROXY"', cnip)
+        self.assertIn('"https://223.5.5.5/dns-query#DIRECT"', cnip)
 
     def test_direct_intents_are_translated(self) -> None:
         with TemporaryDirectory() as directory:

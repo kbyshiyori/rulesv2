@@ -42,5 +42,8 @@ python build.py --profile cnip \
 ```
 
 Pass `--dns "$NEXTDNS_DOH_URL"` to use the same foreign resolver as the Shadowrocket
-profiles. Without it, the builder uses Cloudflare DoH. CN names use AliDNS and follow the
-CN route (`PROXY` in backcn; `DIRECT` in cnip).
+profiles. Without it, the builder uses Cloudflare DoH. CN names use
+`https://223.5.5.5/dns-query`. Resolver traffic follows its matching exit explicitly:
+
+- `backcn`: NextDNS `#DIRECT`; AliDNS `#PROXY`.
+- `cnip`: AliDNS `#DIRECT`; NextDNS `#PROXY`.

@@ -9,7 +9,7 @@ Pipeline:
     -> inline-expand a China-domain list as DOMAIN-SUFFIX,<d>,PROXY, placed AFTER the ad
        Reject list and BEFORE FINAL (so 境内 ad-block still wins, but CN domains route via
        the node and are resolved node-side, never by the local/境外 DNS)
-    -> optionally override [General] dns-server with a NextDNS DoH URL (境外 DNS)
+    -> set the DIRECT resolver by direction: NextDNS for backcn, AliDNS for cnip
     -> write dist/shadowrocket/sr-backcn.conf
 
 Why the two blocks sit in different places:
@@ -23,8 +23,10 @@ Why the two blocks sit in different places:
 Design notes:
   * Output contains NO node/proxy secrets. In Shadowrocket you pick the China node and set
     it to "use config"; the PROXY policy follows the selected node.
+  * Shadowrocket's dns-server resolves DIRECT domains only. PROXY domains are resolved by
+    the selected proxy server, whose resolver is configured outside this repository.
   * The NextDNS DoH URL is a semi-secret; it is passed via --dns from a CI secret and never
-    committed. Empty --dns leaves the upstream dns-server untouched.
+    committed. Empty --dns leaves the backcn upstream dns-server untouched.
   * We keep the `_ad` upstream on purpose: 境内 ad-block is wanted; 境外 ad-block is handled
     by NextDNS, so foreign reject entries are harmless redundancy.
 """
@@ -52,6 +54,7 @@ DEFAULT_CHINA_LIST = (
     "https://raw.githubusercontent.com/felixonmars/"
     "dnsmasq-china-list/master/accelerated-domains.china.conf"
 )
+DEFAULT_CN_DNS = "https://223.5.5.5/dns-query"
 
 RC_BEGIN = "# >>> rulesv2 redirect-to-cn (auto-generated) >>>"
 RC_END = "# <<< rulesv2 redirect-to-cn <<<"
@@ -230,6 +233,11 @@ def set_dns(text: str, dns_url: str) -> str:
     return text
 
 
+def direct_dns_for_profile(profile: str, foreign_dns: str, cn_dns: str) -> str:
+    """Choose the resolver for domains routed DIRECT by this profile."""
+    return foreign_dns if profile == "backcn" else cn_dns
+
+
 def set_general_value(text: str, key: str, value: str) -> str:
     """Set one [General] scalar, adding it when the upstream omits it."""
     new_line = f"{key} = {value}\n"
@@ -284,7 +292,9 @@ def main() -> int:
     ap.add_argument("--china-list-url", default=DEFAULT_CHINA_LIST)
     ap.add_argument("--china-list-file", default=None, help="local China list (offline/testing)")
     ap.add_argument("--dns", default="",
-                    help="NextDNS DoH URL for 境外 traffic; empty keeps the upstream dns-server")
+                    help="NextDNS DoH URL used by backcn DIRECT traffic")
+    ap.add_argument("--cn-dns", default=DEFAULT_CN_DNS,
+                    help="CN DoH URL used by cnip DIRECT traffic")
     ap.add_argument("--out", required=True)
     args = ap.parse_args()
 
@@ -312,7 +322,8 @@ def main() -> int:
     # Inject last so the exact local-only domain remains the very first rule.
     text = inject_local_direct(text, LOCAL_DIRECT_DOMAINS)
     text = inject_china(text, china)
-    text = set_dns(text, args.dns)
+    direct_dns = direct_dns_for_profile(args.profile, args.dns, args.cn_dns)
+    text = set_dns(text, direct_dns)
 
     out = Path(args.out)
     out.parent.mkdir(parents=True, exist_ok=True)
@@ -322,7 +333,7 @@ def main() -> int:
         f"built {out} ({len(text.splitlines())} lines, {size_mb:.2f} MiB) | "
         f"direct={len(direct)} | redirect-to-cn={len(redirect)} | "
         f"profile={args.profile} | china={len(china)} ({china_mode}) | "
-        f"dns={'nextdns' if args.dns else 'upstream'}"
+        f"direct-dns={'custom' if direct_dns else 'upstream'}"
     )
     return 0
 
