@@ -1,9 +1,9 @@
 # redirect-to-cn: domains that MUST exit via the China node (回国 / backcn).
 #
 # Format: one domain suffix per line. '#' comments and blank lines are ignored.
-# Each target builder translates these into its own "route via CN node" rule:
-#   Shadowrocket -> DOMAIN-SUFFIX,<d>,PROXY   (injected at the TOP of [Rule],
-#                                              so it wins over GEOIP and the ad Reject list)
+# Each target builder translates these into the route that exits in mainland China:
+#   backcn profiles -> PROXY through the CN node
+#   cnip profiles   -> DIRECT from the local CN network
 #   sing-box     -> (future) route rule -> cn outbound
 #
 # WHY these need to be explicit instead of relying on GEOIP,CN:

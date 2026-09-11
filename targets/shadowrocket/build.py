@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build the Shadowrocket 回国 (backcn) config.
+"""Build a Shadowrocket 回国 (backcn) or 出国 (cnip) config.
 
 Pipeline:
   upstream Johnshall sr_backcn_ad.conf
@@ -37,10 +37,16 @@ import sys
 import urllib.request
 from pathlib import Path
 
-DEFAULT_UPSTREAM = (
-    "https://raw.githubusercontent.com/Johnshall/"
-    "Shadowrocket-ADBlock-Rules-Forever/release/sr_backcn_ad.conf"
-)
+DEFAULT_UPSTREAMS = {
+    "backcn": (
+        "https://raw.githubusercontent.com/Johnshall/"
+        "Shadowrocket-ADBlock-Rules-Forever/release/sr_backcn_ad.conf"
+    ),
+    "cnip": (
+        "https://raw.githubusercontent.com/Johnshall/"
+        "Shadowrocket-ADBlock-Rules-Forever/release/sr_cnip_ad.conf"
+    ),
+}
 # felixonmars/dnsmasq-china-list: the canonical CN accelerated-domains list (dnsmasq fmt).
 DEFAULT_CHINA_LIST = (
     "https://raw.githubusercontent.com/felixonmars/"
@@ -141,9 +147,11 @@ def _strip_block(text: str, begin: str, end: str) -> str:
     )
 
 
-def inject_redirect(text: str, domains: list[str]) -> str:
+def inject_redirect(text: str, domains: list[str], policy: str = "PROXY") -> str:
     text = _strip_block(text, RC_BEGIN, RC_END)
-    block = "\n".join([RC_BEGIN, *[f"DOMAIN-SUFFIX,{d},PROXY" for d in domains], RC_END]) + "\n"
+    block = "\n".join(
+        [RC_BEGIN, *[f"DOMAIN-SUFFIX,{d},{policy}" for d in domains], RC_END]
+    ) + "\n"
     lines = text.splitlines(keepends=True)
     for i, line in enumerate(lines):
         if line.strip() == "[Rule]":
@@ -263,13 +271,16 @@ def add_general_list_values(text: str, key: str, values: tuple[str, ...]) -> str
 
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("--upstream-url", default=DEFAULT_UPSTREAM)
+    ap.add_argument("--profile", choices=sorted(DEFAULT_UPSTREAMS), default="backcn",
+                    help="backcn: CN via proxy; cnip: CN direct and overseas via proxy")
+    ap.add_argument("--upstream-url", default=None,
+                    help="override the selected profile's maintained upstream")
     ap.add_argument("--upstream-file", default=None,
                     help="build from a local file instead of fetching (offline/testing)")
     ap.add_argument("--rules", required=True, help="path to redirect-to-cn.list")
     ap.add_argument("--direct-rules", required=True, help="path to direct.list")
-    ap.add_argument("--china-mode", choices=["inline", "off"], default="inline",
-                    help="inline-expand the China-domain list into DOMAIN-SUFFIX rules, or skip")
+    ap.add_argument("--china-mode", choices=["auto", "inline", "off"], default="auto",
+                    help="auto=inlined for backcn and off for cnip; or explicitly select")
     ap.add_argument("--china-list-url", default=DEFAULT_CHINA_LIST)
     ap.add_argument("--china-list-file", default=None, help="local China list (offline/testing)")
     ap.add_argument("--dns", default="",
@@ -277,20 +288,26 @@ def main() -> int:
     ap.add_argument("--out", required=True)
     args = ap.parse_args()
 
-    text = read_upstream(args.upstream_url, args.upstream_file)
+    upstream_url = args.upstream_url or DEFAULT_UPSTREAMS[args.profile]
+    china_mode = (
+        "inline" if args.profile == "backcn" else "off"
+    ) if args.china_mode == "auto" else args.china_mode
+
+    text = read_upstream(upstream_url, args.upstream_file)
     redirect = load_domains(args.rules)
     direct = load_direct_intents(args.direct_rules)
 
     china: list[str] = []
-    if args.china_mode == "inline":
+    if china_mode == "inline":
         raw = (Path(args.china_list_file).read_text(encoding="utf-8")
                if args.china_list_file else _fetch(args.china_list_url))
         china = parse_china_list(raw, exclude=redirect)
 
     text = set_general_value(text, "dns-direct-system", "true")
     text = add_general_list_values(text, "always-real-ip", LOCAL_DIRECT_DOMAINS)
-    text = inject_redirect(text, redirect)
-    # Inject after redirect so DIRECT lands above it at the top of [Rule].
+    redirect_policy = "PROXY" if args.profile == "backcn" else "DIRECT"
+    text = inject_redirect(text, redirect, redirect_policy)
+    # Inject after redirect so explicit DIRECT intents land above it at the top of [Rule].
     text = inject_direct(text, direct)
     # Inject last so the exact local-only domain remains the very first rule.
     text = inject_local_direct(text, LOCAL_DIRECT_DOMAINS)
@@ -304,7 +321,7 @@ def main() -> int:
     print(
         f"built {out} ({len(text.splitlines())} lines, {size_mb:.2f} MiB) | "
         f"direct={len(direct)} | redirect-to-cn={len(redirect)} | "
-        f"china={len(china)} ({args.china_mode}) | "
+        f"profile={args.profile} | china={len(china)} ({china_mode}) | "
         f"dns={'nextdns' if args.dns else 'upstream'}"
     )
     return 0

@@ -34,8 +34,10 @@ end-to-end locally and in CI, which now **publishes the built config to GitHub P
       base; add a CI job.
 - [ ] **Grow `redirect-to-cn.list`** as more CN services leak via overseas CDN (diagnose
       from PacketTunnel logs, same method as 小红书).
-- [ ] **Optional: also build the normal 翻墙 profile** (`sr_cnip_ad.conf`) so the owner can
-      toggle backcn <-> normal by switching subscriptions.
+- [x] **Build the normal Shadowrocket 翻墙 profile** from `sr_cnip_ad.conf` and publish
+      `sr-cnip.conf` alongside the backcn profile.
+- [x] **Build native Clash/Hako profiles** for both directions using iOS-friendly MRS
+      providers and a local-only private provider URL.
 - [ ] **Evaluate GMOogway reject module** as a higher-quality 境内 ad source layered on top
       of the Johnshall base.
 - [ ] **CI hardening:** fail the build if the injected block is missing/duplicated or if

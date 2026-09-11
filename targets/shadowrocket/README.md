@@ -1,10 +1,11 @@
 # targets/shadowrocket
 
-Emits the Shadowrocket 回国 / backcn config.
+Emits Shadowrocket 回国 (`backcn`) and 出国 (`cnip`) configs.
 
 - **Base upstream:** Johnshall `sr_backcn_ad.conf`
   (`https://raw.githubusercontent.com/Johnshall/Shadowrocket-ADBlock-Rules-Forever/release/sr_backcn_ad.conf`),
   fetched fresh each build.
+- **出国 upstream:** Johnshall `sr_cnip_ad.conf` from the same release branch.
 - **China-domain list:** felixonmars `accelerated-domains.china.conf`
   (`https://raw.githubusercontent.com/felixonmars/dnsmasq-china-list/master/accelerated-domains.china.conf`),
   dnsmasq format (`server=/<domain>/<dns>`), ~111k domains.
@@ -19,10 +20,10 @@ Emits the Shadowrocket 回国 / backcn config.
 3. **direct block** — translate `rules/direct.list` exact IP intents into
    `IP-CIDR,<address>/32,DIRECT,no-resolve` rules at the top of `[Rule]`. These explicit
    exceptions override `GEOIP,CN,PROXY` without changing domain routing.
-4. **redirect-to-cn block** — inject `DOMAIN-SUFFIX,<d>,PROXY` for every domain in
-   `rules/redirect-to-cn.list` at the **top of `[Rule]`** (inside `>>> ... <<<` markers,
-   idempotent). Top placement wins over `GEOIP,CN` and the ad `Reject` list — these are the
-   services that must work fully, and they are not ad domains.
+4. **redirect-to-cn block** — inject every domain from `rules/redirect-to-cn.list` at the
+   **top of `[Rule]`** (inside `>>> ... <<<` markers, idempotent). The policy is `PROXY`
+   for `backcn` and `DIRECT` for `cnip`, so the same routing intent works from either side
+   of the mainland border.
 5. **china-domains block** — inline-expand the China list to `DOMAIN-SUFFIX,<d>,PROXY`,
    placed **after the ad `Reject` list and before `FINAL`**. This ordering is deliberate:
    Shadowrocket evaluates domain rules by file order, so putting the broad CN list *below*
@@ -33,6 +34,10 @@ Emits the Shadowrocket 回国 / backcn config.
      境外 DNS. `GEOIP,CN` becomes a thin fallback for names not in the list.
 6. If `--dns` is given, replace the `[General]` `dns-server`.
 7. Write `--out`.
+
+The broad inlined China list defaults to on for `backcn` and off for `cnip`, whose
+maintained upstream already implements the usual CN-direct split. `--china-mode` can
+override either default.
 
 ## Size / performance
 
@@ -52,6 +57,7 @@ python build.py \
 # --dns "$NEXTDNS_DOH_URL"        inject 境外 DNS (else keep upstream)
 # --china-mode off                skip the broad China list
 # --upstream-file / --china-list-file <path>   build offline from saved copies
+# --profile cnip                 build the 出国 profile (default: backcn)
 ```
 
 ## Device setup (Shadowrocket)
@@ -63,3 +69,6 @@ python build.py \
 3. Set the China node's own resolver to a CN DNS (e.g. Ali `223.5.5.5`) so the CN domains
    routed to it resolve domestically. 境外/DIRECT traffic uses the config's `dns-server`
    (NextDNS).
+
+For `sr-cnip.conf`, select an overseas node instead; CN rules remain direct and the final
+fallback follows the selected proxy node.

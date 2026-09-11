@@ -2,9 +2,10 @@
 
 Version-controlled build pipeline for personal proxy rule configs. Takes a maintained
 upstream ruleset, layers local overrides (回国 domain routing, DNS), and publishes a
-ready-to-subscribe config per client.
+ready-to-subscribe routing profile per client.
 
-- **Today:** Shadowrocket (macOS/iOS), 回国 / backcn profile.
+- **Today:** Shadowrocket and the native Clash/Hako app (macOS/iOS), each with 回国
+  (`backcn`) and 出国 (`cnip`) profiles.
 - **Planned:** sing-box config for Android (same `rules/` intent, different emitter).
 
 > This repo is worked on mainly by coding agents (Claude / Codex); the owner mainly
@@ -24,6 +25,16 @@ China IP:
 In Shadowrocket you pick the China node and set it to *use config*; the `PROXY` policy
 follows the selected node, so **the built config carries no node/proxy secrets**.
 
+## What "出国 / cnip" means here
+
+For someone **inside** mainland China, mainland destinations stay `DIRECT` and everything
+else uses `PROXY` through an overseas node. The explicit `redirect-to-cn` domains also
+become `DIRECT` in this direction.
+
+Clash/Hako profiles use a private Proxy Provider. The public files contain an invalid,
+obvious placeholder; after importing, replace it locally with your private mihomo/Clash
+subscription URL. This keeps node credentials out of both git and public Pages.
+
 ## Design decisions
 
 - **Base = Johnshall `sr_backcn_ad.conf`.** It is the only maintained upstream with a
@@ -36,9 +47,8 @@ follows the selected node, so **the built config carries no node/proxy secrets**
 - **`redirect-to-cn` override.** `GEOIP,CN` mis-routes services hosted on global CDNs
   (Akamai / Tencent EdgeOne overseas) — they resolve to overseas edge IPs and leak to
   DIRECT. So domains in [`rules/redirect-to-cn.list`](rules/redirect-to-cn.list) are
-  injected at the **top of `[Rule]`** as `DOMAIN-SUFFIX,<d>,PROXY`, winning over both
-  `GEOIP,CN` and the ad `Reject` list. (First case: 小红书, diagnosed from a
-  PacketTunnel log on 2026-07-15.)
+  injected at the top with the route that exits in China: `PROXY` in `backcn`, `DIRECT`
+  in `cnip`. (First case: 小红书, diagnosed from a PacketTunnel log on 2026-07-15.)
 - **Explicit local DIRECT exceptions.** [`rules/direct.list`](rules/direct.list) holds
   exact IP exceptions that must bypass the China node. The first case is 原神 PC 国服 via
   YAAGL: only the two observed game addresses are `DIRECT`; its `mihoyo.com` and
@@ -49,10 +59,13 @@ follows the selected node, so **the built config carries no node/proxy secrets**
   (~111k domains) as `DOMAIN-SUFFIX,<d>,PROXY`, placed **below the ad `Reject` list** so
   境内 ad-block still wins. Output is ~5.6 MiB; `--china-mode off` disables it. See
   `targets/shadowrocket/README.md` and TODO (rule-set delivery) for the size trade-off.
-- **DNS.** 境外 traffic (DIRECT) uses the local `dns-server` = your **NextDNS** DoH URL
-  (`--dns`). 境内 traffic is matched by domain and routed to the China node, so it is
-  resolved node-side — set the node's resolver to a CN DNS (Ali `223.5.5.5`); that is the
-  vps repo's concern, not this one. This is why CN names never hit NextDNS.
+- **Clash uses MRS providers.** The native Clash app runs inside Apple's memory-limited
+  Network Extension, so the Clash profiles consume MetaCubeX CN-domain, CN-IP, and ad
+  rule sets in compiled MRS form instead of inlining ~111k text rules.
+- **DNS.** Shadowrocket `backcn` uses the configured **NextDNS** DoH URL for foreign
+  `DIRECT` traffic while CN domains resolve node-side. Clash uses split DNS explicitly:
+  AliDNS follows the CN route and NextDNS follows the foreign route, reversing their
+  outbound policies between `backcn` and `cnip`.
 
 ## Layout
 
@@ -60,6 +73,7 @@ follows the selected node, so **the built config carries no node/proxy secrets**
 rules/redirect-to-cn.list      # client-agnostic: domains that must exit via the CN node
 rules/direct.list              # client-agnostic: exact IPs that must use local DIRECT
 targets/shadowrocket/build.py  # emits the Shadowrocket sr-backcn.conf
+targets/clash/build.py         # emits Clash/Hako backcn + cnip YAML profiles
 targets/sing-box/              # planned Android emitter (stub)
 .github/workflows/build.yml    # daily cron + on-push build, publish to GitHub Pages
 dist/                          # local build output (gitignored)
@@ -74,19 +88,33 @@ python targets/shadowrocket/build.py \
   --out dist/shadowrocket/sr-backcn.conf
 # add --dns "$NEXTDNS_DOH_URL" to inject NextDNS
 # add --upstream-file <path> to build offline from a saved upstream
+
+# Shadowrocket 出国
+python targets/shadowrocket/build.py --profile cnip \
+  --rules rules/redirect-to-cn.list \
+  --direct-rules rules/direct.list \
+  --out dist/shadowrocket/sr-cnip.conf
+
+# Clash/Hako: change --profile between backcn and cnip
+python targets/clash/build.py --profile backcn \
+  --rules rules/redirect-to-cn.list \
+  --direct-rules rules/direct.list \
+  --out dist/clash/clash-backcn.yaml
 ```
 
 ## Delivery
 
-CI builds on a daily cron (and on push) and publishes `sr-backcn.conf` to **GitHub Pages**:
+CI builds on a daily cron (and on push) and publishes four files to **GitHub Pages**:
 
-```
-https://kbyshiyori.github.io/rulesv2/sr-backcn.conf
-```
+- `https://kbyshiyori.github.io/rulesv2/sr-backcn.conf`
+- `https://kbyshiyori.github.io/rulesv2/sr-cnip.conf`
+- `https://kbyshiyori.github.io/rulesv2/clash-backcn.yaml`
+- `https://kbyshiyori.github.io/rulesv2/clash-cnip.yaml`
 
-Subscribe Shadowrocket to that URL (Config tab → `+`). Pages gives auto-TLS + CDN and no
-server to run. The Pages site is public, so the published config — **including the
-injected `NEXTDNS_DOH_URL`** — is public by design (see below).
+Subscribe the matching client to its URL. For Clash, import the YAML once, choose **Edit
+Source**, replace the placeholder Proxy Provider URL, and keep that edited copy local.
+Pages gives auto-TLS + CDN and no server to run. The Pages site is public, so the published
+config — **including the injected `NEXTDNS_DOH_URL`** — is public by design (see below).
 
 ## Secrets
 
