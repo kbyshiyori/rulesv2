@@ -8,7 +8,8 @@ Emits two minimal mihomo YAML profiles for the native **Clash for Apple Platform
 - `clash-cnip.yaml`: mainland-China destinations are `DIRECT`; everything else uses
   `PROXY`.
 
-The profiles use MetaCubeX `cn.mrs`, `cn-ip.mrs`, and `category-ads-all.mrs` rule
+The profiles use MetaCubeX `cn.mrs`, `cn-ip.mrs`, `youtube.mrs`, and
+`category-ads-all.mrs` rule
 providers. MRS is intentional: large YAML/text rule sets can exceed the memory available
 to an iOS Network Extension.
 
@@ -26,6 +27,10 @@ For `backcn`, that provider must contain a mainland-China node; for `cnip`, it s
 contain the overseas nodes you want to use. The source URL is a secret: never commit it or
 publish the edited profile. Until a working provider is configured, the `PROXY` group
 falls back to `REJECT` so traffic cannot silently leak through `DIRECT`.
+
+Both profiles expose a separate `YouTube` select group populated from the same private
+provider. Its selection is independent of `PROXY`; no default node is forced. YouTube DNS
+uses the foreign resolver through the node selected in that group.
 
 ## Build
 

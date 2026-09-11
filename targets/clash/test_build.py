@@ -45,6 +45,21 @@ class BuildTests(unittest.TestCase):
         self.assertIn("      - REJECT", text)
         self.assertNotIn("password:", text)
 
+    def test_youtube_has_an_independent_select_group_in_both_profiles(self) -> None:
+        for profile in ("backcn", "cnip"):
+            text = build.render(profile, [], [], "https://dns.example/dns-query")
+            self.assertIn("  - name: YouTube\n    type: select", text)
+            self.assertIn("  - RULE-SET,youtube,YouTube", text)
+            self.assertIn(
+                '    "rule-set:youtube": "https://dns.example/dns-query#YouTube"',
+                text,
+            )
+            youtube_group = text.split("  - name: YouTube\n", 1)[1].split(
+                "rule-providers:", 1
+            )[0]
+            self.assertIn("    use:\n      - private-provider", youtube_group)
+            self.assertNotIn("default-selected:", youtube_group)
+
 
 if __name__ == "__main__":
     unittest.main()

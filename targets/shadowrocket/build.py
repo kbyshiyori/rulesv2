@@ -55,6 +55,18 @@ DEFAULT_CHINA_LIST = (
     "dnsmasq-china-list/master/accelerated-domains.china.conf"
 )
 DEFAULT_CN_DNS = "https://223.5.5.5/dns-query"
+YOUTUBE_RULESET = (
+    "https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/"
+    "master/rule/Shadowrocket/YouTube/YouTube.list"
+)
+YOUTUBE_NODES = (
+    "dmit-beanfield",
+    "jpty1-kddi",
+    "aliyun-jpty1-kddi",
+    "jpty1-aliyun-chinanet",
+    "jpty1-chinanet-7mbps",
+    "jpty1-game",
+)
 
 RC_BEGIN = "# >>> rulesv2 redirect-to-cn (auto-generated) >>>"
 RC_END = "# <<< rulesv2 redirect-to-cn <<<"
@@ -64,6 +76,10 @@ CN_BEGIN = "# >>> rulesv2 china-domains (auto-generated, inlined) >>>"
 CN_END = "# <<< rulesv2 china-domains <<<"
 LOCAL_BEGIN = "# >>> rulesv2 local-direct (auto-generated) >>>"
 LOCAL_END = "# <<< rulesv2 local-direct <<<"
+YOUTUBE_RULE_BEGIN = "# >>> rulesv2 youtube (auto-generated) >>>"
+YOUTUBE_RULE_END = "# <<< rulesv2 youtube <<<"
+YOUTUBE_GROUP_BEGIN = "# >>> rulesv2 youtube-group (auto-generated) >>>"
+YOUTUBE_GROUP_END = "# <<< rulesv2 youtube-group <<<"
 LOCAL_DIRECT_DOMAINS = ("pikvm.kbyshiyori.com",)
 
 
@@ -184,6 +200,43 @@ def inject_local_direct(text: str, domains: tuple[str, ...]) -> str:
     for i, line in enumerate(lines):
         if line.strip() == "[Rule]":
             lines.insert(i + 1, "\n" + block)
+            return "".join(lines)
+    raise SystemExit("error: [Rule] section not found in upstream")
+
+
+def inject_youtube_rule(text: str) -> str:
+    """Route YouTube through a separate user-selectable policy group."""
+    text = _strip_block(text, YOUTUBE_RULE_BEGIN, YOUTUBE_RULE_END)
+    block = "\n".join(
+        [
+            YOUTUBE_RULE_BEGIN,
+            f"RULE-SET,{YOUTUBE_RULESET},YouTube",
+            YOUTUBE_RULE_END,
+        ]
+    ) + "\n"
+    lines = text.splitlines(keepends=True)
+    for i, line in enumerate(lines):
+        if line.strip() == "[Rule]":
+            lines.insert(i + 1, "\n" + block)
+            return "".join(lines)
+    raise SystemExit("error: [Rule] section not found in upstream")
+
+
+def inject_youtube_group(text: str) -> str:
+    """Add the node-name-only group without embedding any proxy credentials."""
+    text = _strip_block(text, YOUTUBE_GROUP_BEGIN, YOUTUBE_GROUP_END)
+    policies = ",".join((*YOUTUBE_NODES, "PROXY", "DIRECT"))
+    block = "\n".join(
+        [YOUTUBE_GROUP_BEGIN, f"YouTube = select,{policies}", YOUTUBE_GROUP_END]
+    ) + "\n"
+    lines = text.splitlines(keepends=True)
+    for i, line in enumerate(lines):
+        if line.strip() == "[Proxy Group]":
+            lines.insert(i + 1, "\n" + block)
+            return "".join(lines)
+    for i, line in enumerate(lines):
+        if line.strip() == "[Rule]":
+            lines.insert(i, f"[Proxy Group]\n\n{block}\n")
             return "".join(lines)
     raise SystemExit("error: [Rule] section not found in upstream")
 
@@ -315,8 +368,10 @@ def main() -> int:
 
     text = set_general_value(text, "dns-direct-system", "true")
     text = add_general_list_values(text, "always-real-ip", LOCAL_DIRECT_DOMAINS)
+    text = inject_youtube_group(text)
     redirect_policy = "PROXY" if args.profile == "backcn" else "DIRECT"
     text = inject_redirect(text, redirect, redirect_policy)
+    text = inject_youtube_rule(text)
     # Inject after redirect so explicit DIRECT intents land above it at the top of [Rule].
     text = inject_direct(text, direct)
     # Inject last so the exact local-only domain remains the very first rule.

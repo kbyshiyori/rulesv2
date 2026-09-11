@@ -28,6 +28,21 @@ class BuildTests(unittest.TestCase):
         self.assertEqual(build.direct_dns_for_profile("backcn", nextdns, alidns), nextdns)
         self.assertEqual(build.direct_dns_for_profile("cnip", nextdns, alidns), alidns)
 
+    def test_youtube_group_and_rule_are_idempotent(self) -> None:
+        source = "[General]\ndns-server = system\n[Rule]\nFINAL,DIRECT\n"
+
+        once = build.inject_youtube_group(build.inject_youtube_rule(source))
+        twice = build.inject_youtube_group(build.inject_youtube_rule(once))
+
+        self.assertEqual(once, twice)
+        self.assertEqual(twice.count(build.YOUTUBE_GROUP_BEGIN), 1)
+        self.assertEqual(twice.count(build.YOUTUBE_RULE_BEGIN), 1)
+        self.assertIn(
+            "YouTube = select," + ",".join((*build.YOUTUBE_NODES, "PROXY", "DIRECT")),
+            twice,
+        )
+        self.assertIn(f"RULE-SET,{build.YOUTUBE_RULESET},YouTube", twice)
+
 
 if __name__ == "__main__":
     unittest.main()

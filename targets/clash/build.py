@@ -19,6 +19,10 @@ ADS_URL = (
     "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/"
     "meta/geo/geosite/category-ads-all.mrs"
 )
+YOUTUBE_URL = (
+    "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/"
+    "meta/geo/geosite/youtube.mrs"
+)
 PROVIDER_PLACEHOLDER = "https://example.invalid/replace-with-private-mihomo-profile.yaml"
 CN_DNS = "https://223.5.5.5/dns-query"
 
@@ -104,6 +108,7 @@ def render(profile: str, domains: list[str], direct_rules: list[str], dns: str) 
         "  nameserver:",
         f"    - {quote(foreign_dns + '#' + foreign_dns_route)}",
         "  nameserver-policy:",
+        f"    {quote('rule-set:youtube')}: {quote(foreign_dns + '#YouTube')}",
         f"    {quote('rule-set:cn-domain')}: {quote(CN_DNS + '#' + cn_dns_route)}",
     ]
     for domain in domains:
@@ -131,6 +136,13 @@ def render(profile: str, domains: list[str], direct_rules: list[str], dns: str) 
         "      - REJECT",
         "    use:",
         "      - private-provider",
+        "  - name: YouTube",
+        "    type: select",
+        "    proxies:",
+        "      - PROXY",
+        "      - DIRECT",
+        "    use:",
+        "      - private-provider",
         "rule-providers:",
         "  cn-domain:",
         "    type: http",
@@ -153,12 +165,20 @@ def render(profile: str, domains: list[str], direct_rules: list[str], dns: str) 
         f"    url: {quote(ADS_URL)}",
         "    path: ./rules/ads.mrs",
         "    interval: 86400",
+        "  youtube:",
+        "    type: http",
+        "    behavior: domain",
+        "    format: mrs",
+        f"    url: {quote(YOUTUBE_URL)}",
+        "    path: ./rules/youtube.mrs",
+        "    interval: 86400",
         "rules:",
         "  - DOMAIN,pikvm.kbyshiyori.com,DIRECT",
     ])
     lines.extend(f"  - {rule}" for rule in direct_rules)
     lines.extend(f"  - DOMAIN-SUFFIX,{domain},{cn_policy}" for domain in domains)
     lines.extend([
+        "  - RULE-SET,youtube,YouTube",
         "  - RULE-SET,ads,REJECT",
         "  - RULE-SET,cn-domain," + cn_policy,
         "  - RULE-SET,cn-ip," + cn_policy + ",no-resolve",
