@@ -32,9 +32,9 @@ Emits Shadowrocket 回国 (`backcn`) and 出国 (`cnip`) configs.
    - Effect: CN domains route via the node **by name**, so they are resolved node-side
      (set the node's resolver to a CN DNS, e.g. Ali `223.5.5.5`) and never hit the local
      境外 DNS. `GEOIP,CN` becomes a thin fallback for names not in the list.
-6. Add a `YouTube` select group containing the known app-local node names plus `PROXY`
-   and `DIRECT`, then route the maintained Shadowrocket YouTube rule set to it. The group
-   does not force a selection and no node credentials are emitted.
+6. Route the maintained Shadowrocket YouTube rule set to the `YouTube` policy. The conf
+   deliberately does not emit `[Proxy Group]`; define the global `YouTube` select group
+   in Shadowrocket and choose its node there.
 7. Set the DIRECT-side `[General]` `dns-server`: `--dns` (NextDNS) for `backcn`, or
    `--cn-dns` (default `https://223.5.5.5/dns-query`) for `cnip`.
 8. Write `--out`.
@@ -80,8 +80,8 @@ fallback follows the selected proxy node. The profile's DIRECT domains use
 `https://223.5.5.5/dns-query`; configure the overseas proxy server to use NextDNS for its
 PROXY-side domain resolution.
 
-Both profiles expose a `YouTube` select group. Choose its node independently in
-Shadowrocket; changing it does not change the app's main `PROXY` selection.
+Both profiles reference the global Shadowrocket policy named exactly `YouTube`. The
+published conf does not define or overwrite that group.
 
 Shadowrocket's `proxy-dns-server` is not a PROXY-traffic DNS setting: it resolves the
 proxy node's own hostname. It cannot replace the required node-side resolver setup.

@@ -63,8 +63,9 @@ subscription URL. This keeps node credentials out of both git and public Pages.
   Network Extension, so the Clash profiles consume MetaCubeX CN-domain, CN-IP, and ad
   rule sets in compiled MRS form instead of inlining ~111k text rules.
 - **YouTube has an independent selectable exit.** Both clients route a maintained
-  YouTube rule set to a `YouTube` select group. The user chooses its node separately from
-  the main `PROXY` group; node credentials remain local/private.
+  YouTube rule set to the `YouTube` policy. Clash emits that select group; Shadowrocket
+  references the user's app-global group without defining it in the published conf.
+  Node credentials remain local/private.
 - **DNS follows the exit direction.** Clash expresses the full split in YAML. Shadowrocket
   applies `dns-server` only to `DIRECT` domains, while `PROXY` domains resolve on the
   selected proxy server; the node-side resolver must therefore match the second column.
