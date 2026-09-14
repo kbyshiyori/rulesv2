@@ -1,0 +1,5 @@
+{
+  "name": "rulesv2",
+  "user": "ubuntu",
+  "install": "set -eu; command -v python >/dev/null 2>&1 || sudo ln -sf \"$(command -v python3)\" /usr/local/bin/python; python --version; python -m py_compile targets/shadowrocket/build.py targets/clash/build.py"
+}
