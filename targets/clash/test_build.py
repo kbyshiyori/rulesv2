@@ -63,6 +63,25 @@ class BuildTests(unittest.TestCase):
             self.assertIn("    use:\n      - private-provider", youtube_group)
             self.assertNotIn("default-selected:", youtube_group)
 
+    def test_verge_adds_yuanshen_process_group_before_direct_exceptions(self) -> None:
+        for profile in ("backcn", "cnip"):
+            text = build.render(
+                profile, ["yuanshen.com"], ["IP-CIDR,192.0.2.1/32,DIRECT,no-resolve"],
+                "", "verge",
+            )
+            group = text.split('  - name: "原神"\n', 1)[1].split(
+                "rule-providers:", 1
+            )[0]
+            self.assertIn("    type: select", group)
+            self.assertIn("    use:\n      - private-provider", group)
+            self.assertIn("      - DIRECT", group)
+            self.assertIn("find-process-mode: always", text)
+            self.assertLess(
+                text.index("PROCESS-NAME,YuanShen.exe,原神"),
+                text.index("IP-CIDR,192.0.2.1/32,DIRECT,no-resolve"),
+            )
+            self.assertNotIn("PROCESS-NAME,YuanShen.exe", build.render(profile, [], [], ""))
+
 
 if __name__ == "__main__":
     unittest.main()

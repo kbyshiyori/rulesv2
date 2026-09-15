@@ -70,6 +70,23 @@ jobs:
             --dns "$NEXTDNS_DOH_URL" \
             --out _site/clash-cnip.yaml
 
+      - name: Build Clash Verge Rev profiles
+        run: |
+          python targets/clash/build.py \
+            --platform verge \
+            --profile backcn \
+            --rules rules/redirect-to-cn.list \
+            --direct-rules rules/direct.list \
+            --dns "$NEXTDNS_DOH_URL" \
+            --out _site/clash-verge-backcn.yaml
+          python targets/clash/build.py \
+            --platform verge \
+            --profile cnip \
+            --rules rules/redirect-to-cn.list \
+            --direct-rules rules/direct.list \
+            --dns "$NEXTDNS_DOH_URL" \
+            --out _site/clash-verge-cnip.yaml
+
       - name: Test builders
         run: |
           python -m unittest discover -s targets/shadowrocket -p 'test_*.py'
