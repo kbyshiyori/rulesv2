@@ -5,8 +5,3 @@
 #   domain-suffix,<domain>
 #   protocol-port,<tcp|udp>,<destination port>
 #
-# 原神 PC 国服 via YAAGL (observed in Shadowrocket PacketTunnel log 2026-08-08):
-#   * only the two observed server addresses bypass the China node;
-#   * mihoyo.com, yuanshen.com and every other address keep their normal PROXY routing.
-ip-cidr,47.103.31.100/32
-ip-cidr,47.103.138.164/32
