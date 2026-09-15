@@ -15,18 +15,18 @@ to an iOS Network Extension.
 
 ## Private node setup
 
-Published profiles contain no node, credential, or subscription token. After importing a
-profile, open **Edit Source** and replace this value:
+Published profiles contain no node or credential. They declare a file Proxy Source named
+`private-provider`, with a core-managed path `./providers/private-provider.yaml`. On each
+device, import a private YAML file named `private-provider.yaml` into that profile's
+**Proxy Sources** → **private-provider** → **Source: file** → **Choose File**. Hako copies
+the selected file into the profile's protected resource store; the original path is not
+used at runtime. Re-import the file if its contents change. Until a valid local provider
+is installed, `PROXY` falls back to `REJECT` rather than `DIRECT`.
 
-```yaml
-url: "https://example.invalid/replace-with-private-mihomo-profile.yaml"
-```
-
-with the HTTPS URL of your private Clash/mihomo subscription. Keep the quotation marks.
-For `backcn`, that provider must contain a mainland-China node; for `cnip`, it should
-contain the overseas nodes you want to use. The source URL is a secret: never commit it or
-publish the edited profile. Until a working provider is configured, the `PROXY` group
-falls back to `REJECT` so traffic cannot silently leak through `DIRECT`.
+The private file must contain only a `proxies:` list, not `rules:` or `proxy-groups:`.
+Each device can use the same file name while keeping its own WireGuard client key and
+address. Do not commit or publish any device's private file. For `backcn`, select a
+mainland-China node in `PROXY`; for `cnip`, select an overseas node.
 
 Both profiles expose a separate `YouTube` select group populated from the same private
 provider. Its selection is independent of `PROXY`; no default node is forced. YouTube DNS

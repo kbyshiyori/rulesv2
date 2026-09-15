@@ -39,10 +39,13 @@ class BuildTests(unittest.TestCase):
                 ],
             )
 
-    def test_secret_placeholder_is_the_only_provider_url(self) -> None:
+    def test_private_provider_is_a_local_file_without_embedded_nodes(self) -> None:
         text = build.render("cnip", [], [], "")
-        self.assertIn(build.PROVIDER_PLACEHOLDER, text)
+        self.assertIn("  private-provider:\n    type: file", text)
+        self.assertIn(f'    path: "{build.PRIVATE_PROVIDER_PATH}"', text)
+        self.assertNotIn("    url: \"https://example.invalid/", text)
         self.assertIn("      - REJECT", text)
+        self.assertNotIn("proxies:\n  - name:", text)
         self.assertNotIn("password:", text)
 
     def test_youtube_has_an_independent_select_group_in_both_profiles(self) -> None:

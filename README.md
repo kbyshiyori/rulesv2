@@ -31,9 +31,10 @@ For someone **inside** mainland China, mainland destinations stay `DIRECT` and e
 else uses `PROXY` through an overseas node. The explicit `redirect-to-cn` domains also
 become `DIRECT` in this direction.
 
-Clash/Hako profiles use a private Proxy Provider. The public files contain an invalid,
-obvious placeholder; after importing, replace it locally with your private mihomo/Clash
-subscription URL. This keeps node credentials out of both git and public Pages.
+Clash/Hako profiles use a private file Proxy Provider named `private-provider`. Import a
+device-specific `private-provider.yaml` containing only `proxies:` into each profile's
+Proxy Sources. The public rules files contain no nodes or credentials; devices can share
+the same file name while using different WireGuard client keys and addresses.
 
 ## Design decisions
 
@@ -119,8 +120,8 @@ CI builds on a daily cron (and on push) and publishes four files to **GitHub Pag
 - `https://kbyshiyori.github.io/rulesv2/clash-backcn.yaml`
 - `https://kbyshiyori.github.io/rulesv2/clash-cnip.yaml`
 
-Subscribe the matching client to its URL. For Clash, import the YAML once, choose **Edit
-Source**, replace the placeholder Proxy Provider URL, and keep that edited copy local.
+Subscribe the matching client to its URL. For Clash, import a device-specific
+`private-provider.yaml` under the profile's **Proxy Sources**; keep that file private.
 Pages gives auto-TLS + CDN and no server to run. The Pages site is public, so the published
 config — **including the injected `NEXTDNS_DOH_URL`** — is public by design (see below).
 
