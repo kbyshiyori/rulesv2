@@ -3,6 +3,35 @@
 You (Claude / Codex) do most of the work in this repo; the owner reviews. Keep changes
 small, reviewable, and secret-free.
 
+## Quick environment setup
+
+Start from the repository root. CI uses Python 3.12 and both builders use only the
+standard library, so there is no virtual environment, package install, or service to
+start. Use `python3.12` explicitly if your system's `python` points to another version.
+
+```sh
+cd /path/to/rulesv2
+python3.12 --version
+python3.12 -m unittest discover -s targets/shadowrocket -p 'test_*.py'
+python3.12 -m unittest discover -s targets/clash -p 'test_*.py'
+python3.12 targets/clash/build.py --profile backcn \
+  --rules rules/redirect-to-cn.list \
+  --direct-rules rules/direct.list \
+  --out /tmp/clash-backcn.yaml
+```
+
+The tests and Clash build work offline. A normal Shadowrocket build fetches the
+Johnshall upstream and the China-domain list from GitHub at build time, so it needs
+network access. For an offline Shadowrocket build, pass local copies with
+`--upstream-file` and `--china-list-file`, or use `--china-mode off` when the broad
+China-domain list is irrelevant to the change. See the target READMEs for profile
+options and upstream URLs.
+
+No secret is required for tests or a local build. Leave `--dns` unset unless you are
+specifically testing DNS injection; never print or commit a real `NEXTDNS_DOH_URL`.
+Write generated files to `/tmp` or gitignored `dist/`, and check `git status --short`
+before handing work back for review.
+
 ## Golden rules
 
 - **Never commit secrets.** No NextDNS DoH URL (embeds a config id), no node keys, no SSH
