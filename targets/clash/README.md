@@ -61,6 +61,10 @@ own node credentials. A remote node subscription in Verge is a separate main pro
 this rules profile instead reads a local file provider so changing nodes does not require
 publishing them in the rules repo.
 
+原神 routing is app/process-based rather than tied to server IPs. This repository encodes
+that behavior only in the Verge profile; configure app-based routing directly in other
+clients because those device-specific settings are not part of the generated profiles.
+
 ## Build
 
 ```sh
