@@ -50,10 +50,10 @@ the same file name while using different WireGuard client keys and addresses.
   DIRECT. So domains in [`rules/redirect-to-cn.list`](rules/redirect-to-cn.list) are
   injected at the top with the route that exits in China: `PROXY` in `backcn`, `DIRECT`
   in `cnip`. (First case: 小红书, diagnosed from a PacketTunnel log on 2026-07-15.)
-- **Explicit local DIRECT exceptions.** [`rules/direct.list`](rules/direct.list) holds
-  exact IP exceptions that must bypass the China node. The first case is 原神 PC 国服 via
-  YAAGL: only the two observed game addresses are `DIRECT`; its `mihoyo.com` and
-  `yuanshen.com` web services retain their normal `PROXY` routing.
+- **原神 routes by app/process, not by server IP.** The Clash Verge Rev profile includes
+  the `YuanShen.exe` process rule and an independent `原神` node selector. On other
+  clients, configure app-based routing in the client itself; those device-specific
+  settings are not represented in this repository.
 - **China-domain list, inlined.** To make CN traffic route (and resolve) via the node
   instead of relying on `GEOIP,CN` — which forces a local/境外 DNS lookup and re-leaks CDN
   services — the builder inline-expands felixonmars `accelerated-domains.china.conf`
@@ -67,9 +67,6 @@ the same file name while using different WireGuard client keys and addresses.
   YouTube rule set to the `YouTube` policy. Clash emits that select group; Shadowrocket
   references the user's app-global group without defining it in the published conf.
   Node credentials remain local/private.
-- **Windows 原神 process routing.** Clash Verge Rev adds a `YuanShen.exe` rule and an
-  independent `原神` node selector. TUN mode captures the game's traffic; nodes stay
-  in a local private provider. See [`targets/clash/README.md`](targets/clash/README.md).
 - **DNS follows the exit direction.** Clash expresses the full split in YAML. Shadowrocket
   applies `dns-server` only to `DIRECT` domains, while `PROXY` domains resolve on the
   selected proxy server; the node-side resolver must therefore match the second column.
@@ -83,7 +80,7 @@ the same file name while using different WireGuard client keys and addresses.
 
 ```
 rules/redirect-to-cn.list      # client-agnostic: domains that must exit via the CN node
-rules/direct.list              # client-agnostic: exact IPs that must use local DIRECT
+rules/direct.list              # client-agnostic: optional local DIRECT exceptions
 targets/shadowrocket/build.py  # emits the Shadowrocket sr-backcn.conf
 targets/clash/build.py         # emits Clash/Hako and Clash Verge Rev YAML profiles
 targets/sing-box/              # planned Android emitter (stub)
