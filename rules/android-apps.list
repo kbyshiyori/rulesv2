@@ -1,0 +1,54 @@
+# Android package routing for FlClash (and later other Android clients).
+#
+# Format: group,package,label
+# Groups:
+#   🇨🇦 北美     -> select (US/PayPal-style exit)
+#   🎮 游戏     -> select (currently 原神 only)
+#   🎯 全球直连 -> select: DIRECT when abroad, an overseas node when in CN
+#
+# Source: docs/nekobox-route-snapshot.json (vivo NekoBox route page).
+# First group wins if a package appears twice. YouTube and T-Life are 北美-only
+# because that rule was above 绕过app on the phone. Muse was moved to 北美.
+# com.follow.clash is omitted here; the emitter always pins it to DIRECT.
+
+# 北美app
+🇨🇦 北美,com.chase.sig.android,Chase
+🇨🇦 北美,com.citi.citimobile,Citi Mobile
+🇨🇦 北美,com.discoverfinancial.mobile,Discover
+🇨🇦 北美,com.experian.android,Experian
+🇨🇦 北美,com.tmobile.tuesdays,T-Life
+🇨🇦 北美,com.usbank.mobilebanking,U.S. Bank
+🇨🇦 北美,com.google.android.youtube,YouTube
+🇨🇦 北美,com.facebook.aura,Muse
+
+# 游戏 (原神 only; missav is a separate domain group)
+🎮 游戏,com.miHoYo.Yuanshen,原神
+
+# NekoBox 绕过app -> 🎯 全球直连. YouTube / T-Life / Muse omitted (北美 already claimed them).
+# Snapshot reported 31 apps / 30 visible; the missing package is still unverified.
+🎯 全球直连,ee.nekoko.nlpa.flavor1,9eSIM
+🎯 全球直连,com.google.android.projection.gearhead,Android Auto
+🎯 全球直连,com.google.android.webview,Android System WebView
+🎯 全球直连,com.google.android.marvin.talkback,Android 无障碍套件
+🎯 全球直连,com.apple.android.music,Apple Music
+🎯 全球直连,com.azure.authenticator,Authenticator
+🎯 全球直连,com.google.android.configupdater,ConfigUpdater
+🎯 全球直连,com.samsung.accessory.jellymgr,Galaxy Buds3
+🎯 全球直连,com.google.android.googlequicksearchbox,Google
+🎯 全球直连,com.android.vending,Google Play 商店
+🎯 全球直连,com.google.android.gms,Google Play 服务
+🎯 全球直连,com.google.android.syncadapters.calendar,Google 日历同步
+🎯 全球直连,com.google.android.gsf,Google 服务框架
+🎯 全球直连,com.okta.android.auth,Okta Verify
+🎯 全球直连,com.microsoft.office.outlook,Outlook
+🎯 全球直连,com.paypal.android.p2pmobile,PayPal
+🎯 全球直连,com.picacg.picacomic,PicACG
+🎯 全球直连,com.google.android.printservice.recommendation,Print Service Recommendation Service
+🎯 全球直连,com.reddit.frontpage,Reddit
+🎯 全球直连,com.moneybookers.skrillpayments,Skrill
+🎯 全球直连,com.Slack,Slack
+🎯 全球直连,com.twitter.android,X
+🎯 全球直连,com.hush.yamby,Yamby
+🎯 全球直连,us.zoom.videomeetings,Zoom
+🎯 全球直连,com.kddi.kdla.jp,povo2.0
+🎯 全球直连,com.samsung.android.app.watchmanager,三星智能穿戴

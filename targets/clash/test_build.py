@@ -43,6 +43,9 @@ class BuildTests(unittest.TestCase):
         text = build.render("cnip", [], [], "")
         self.assertIn("  private-provider:\n    type: file", text)
         self.assertIn(f'    path: "{build.PRIVATE_PROVIDER_PATH}"', text)
+        self.assertIn(f'      url: "{build.HEALTH_CHECK_URL}"', text)
+        self.assertIn("      expected-status: 200", text)
+        self.assertNotIn("gstatic.com", text)
         self.assertNotIn("    url: \"https://example.invalid/", text)
         self.assertIn("      - REJECT", text)
         self.assertNotIn("proxies:\n  - name:", text)
@@ -81,6 +84,141 @@ class BuildTests(unittest.TestCase):
                 text.index("IP-CIDR,192.0.2.1/32,DIRECT,no-resolve"),
             )
             self.assertNotIn("PROCESS-NAME,YuanShen.exe", build.render(profile, [], [], ""))
+
+    def test_android_apps_keep_first_group_and_exact_package_case(self) -> None:
+        with TemporaryDirectory() as directory:
+            path = Path(directory) / "apps.list"
+            path.write_text(
+                "🇨🇦 北美,com.google.android.youtube,YouTube\n"
+                "🎯 全球直连,com.google.android.youtube,YouTube again\n"
+                "🎯 全球直连,com.Slack,Slack\n"
+                "🎯 全球直连,com.follow.clash,FIClash\n",
+                encoding="utf-8",
+            )
+            self.assertEqual(
+                build.load_android_apps(str(path)),
+                {
+                    "🇨🇦 北美": ["com.google.android.youtube"],
+                    "🎮 游戏": [],
+                    "🎯 全球直连": ["com.Slack"],
+                },
+            )
+
+    def test_flclash_is_a_single_profile_with_location_switch_groups(self) -> None:
+        root = Path(__file__).resolve().parents[2]
+        apps = build.load_android_apps(str(root / "rules" / "android-apps.list"))
+        policy_domains = build.load_policy_domains(
+            str(root / "rules" / "policy-domains.list")
+        )
+        text = build.render(
+            "backcn", ["xiaohongshu.com"], [],
+            "https://dns.example/dns-query", "flclash", apps, policy_domains,
+        )
+        same_if_cnip = build.render(
+            "cnip", ["xiaohongshu.com"], [],
+            "https://dns.example/dns-query", "flclash", apps, policy_domains,
+        )
+        self.assertEqual(text, same_if_cnip)
+        self.assertIn("find-process-mode: always", text)
+        self.assertIn("enhanced-mode: redir-host", text)
+        self.assertIn("respect-rules: true", text)
+        self.assertIn("nameserver-policy:", text)
+        self.assertIn('    - "https://223.5.5.5/dns-query"', text)
+        self.assertIn('    "+.xiaohongshu.com": "https://223.5.5.5/dns-query"', text)
+        self.assertIn('    "+.18comic.vip": "https://dns.example/dns-query"', text)
+        self.assertIn('    "+.missav.ai": "https://dns.example/dns-query"', text)
+        self.assertIn('    "+.browsercrp.vivo.com.cn": "https://223.5.5.5/dns-query"', text)
+        self.assertIn('    "+.chase.com": "https://dns.example/dns-query"', text)
+        self.assertIn('    "+.hoyoverse.com": "https://dns.example/dns-query"', text)
+        self.assertIn('    "rule-set:youtube": "https://dns.example/dns-query"', text)
+        self.assertIn('    "rule-set:acl-gfw": "https://dns.example/dns-query"', text)
+        self.assertIn('    "rule-set:acl-cn-domain": "https://223.5.5.5/dns-query"', text)
+        self.assertIn("proxy-server-nameserver:\n    - system", text)
+        self.assertNotIn("direct-nameserver:", text)
+        self.assertNotIn("enhanced-mode: fake-ip", text)
+        default_dns = build.render(
+            "backcn", ["xiaohongshu.com"], [], "", "flclash", apps, policy_domains,
+        )
+        self.assertIn('    "rule-set:youtube": "https://1.1.1.1/dns-query"', default_dns)
+        self.assertNotIn("dns.example", default_dns)
+        self.assertIn(f"PROCESS-NAME,com.chase.sig.android,{build.GROUP_NA}", text)
+        self.assertIn(f"PROCESS-NAME,com.miHoYo.Yuanshen,{build.GROUP_GAME}", text)
+        self.assertIn(f"PROCESS-NAME,com.google.android.youtube,{build.GROUP_NA}", text)
+        self.assertNotIn(f"PROCESS-NAME,com.google.android.youtube,{build.GROUP_GLOBAL}", text)
+        self.assertIn(f"PROCESS-NAME,com.facebook.aura,{build.GROUP_NA}", text)
+        self.assertNotIn(f"PROCESS-NAME,com.facebook.aura,{build.GROUP_GLOBAL}", text)
+        self.assertIn(f"PROCESS-NAME,com.reddit.frontpage,{build.GROUP_GLOBAL}", text)
+        self.assertIn("PROCESS-NAME,com.follow.clash,DIRECT", text)
+        self.assertNotIn(f"PROCESS-NAME,com.follow.clash,{build.GROUP_GLOBAL}", text)
+        self.assertIn(f"DOMAIN-SUFFIX,18comic.vip,{build.GROUP_18}", text)
+        self.assertIn(f"DOMAIN-SUFFIX,missav.ai,{build.GROUP_MISSAV}", text)
+        self.assertIn(f"DOMAIN-SUFFIX,browsercrp.vivo.com.cn,{build.GROUP_SAFE}", text)
+        self.assertIn(f"DOMAIN-SUFFIX,chase.com,{build.GROUP_NA}", text)
+        self.assertIn(f"DOMAIN-SUFFIX,hoyoverse.com,{build.GROUP_GAME}", text)
+        self.assertNotIn(f"DOMAIN-SUFFIX,18comic.vip,{build.GROUP_NA}", text)
+        self.assertNotIn(f"DOMAIN-SUFFIX,missav.ai,{build.GROUP_GAME}", text)
+        self.assertIn(f"  - name: \"{build.GROUP_FINAL}\"\n    type: select", text)
+        self.assertIn(f"  - name: \"{build.GROUP_GLOBAL}\"\n    type: select", text)
+        self.assertIn(f"  - name: \"{build.GROUP_18}\"\n    type: select", text)
+        self.assertIn(f"  - name: \"{build.GROUP_MISSAV}\"\n    type: select", text)
+        self.assertIn(f"  - name: \"{build.GROUP_SAFE}\"\n    type: select", text)
+        self.assertNotIn("  - name: YouTube\n", text)
+        self.assertIn(f"RULE-SET,youtube,{build.GROUP_GLOBAL}", text)
+        self.assertIn(f"RULE-SET,acl-gfw,{build.GROUP_GLOBAL}", text)
+        self.assertIn(f"RULE-SET,acl-proxy-media,{build.GROUP_GLOBAL}", text)
+        self.assertIn(f"RULE-SET,acl-telegram,{build.GROUP_GLOBAL}", text)
+        self.assertIn(f"RULE-SET,acl-cn-domain,{build.GROUP_FINAL}", text)
+        self.assertIn(f"DOMAIN-SUFFIX,xiaohongshu.com,{build.GROUP_FINAL}", text)
+        self.assertIn(f"GEOIP,CN,{build.GROUP_FINAL},no-resolve", text)
+        self.assertLess(
+            text.index(f"DOMAIN-SUFFIX,18comic.vip,{build.GROUP_18}"),
+            text.index(f"DOMAIN-SUFFIX,missav.ai,{build.GROUP_MISSAV}"),
+        )
+        self.assertLess(
+            text.index(f"DOMAIN-SUFFIX,missav.ai,{build.GROUP_MISSAV}"),
+            text.index(f"DOMAIN-SUFFIX,browsercrp.vivo.com.cn,{build.GROUP_SAFE}"),
+        )
+        self.assertLess(
+            text.index(f"DOMAIN-SUFFIX,browsercrp.vivo.com.cn,{build.GROUP_SAFE}"),
+            text.index(f"DOMAIN-SUFFIX,hoyoverse.com,{build.GROUP_GAME}"),
+        )
+        self.assertLess(
+            text.index(f"DOMAIN-SUFFIX,hoyoverse.com,{build.GROUP_GAME}"),
+            text.index(f"DOMAIN-SUFFIX,chase.com,{build.GROUP_NA}"),
+        )
+        self.assertLess(
+            text.index(f"DOMAIN-SUFFIX,chase.com,{build.GROUP_NA}"),
+            text.index(f"PROCESS-NAME,com.miHoYo.Yuanshen,{build.GROUP_GAME}"),
+        )
+        self.assertLess(
+            text.index(f"PROCESS-NAME,com.miHoYo.Yuanshen,{build.GROUP_GAME}"),
+            text.index(f"PROCESS-NAME,com.chase.sig.android,{build.GROUP_NA}"),
+        )
+        self.assertLess(
+            text.index(f"PROCESS-NAME,com.chase.sig.android,{build.GROUP_NA}"),
+            text.index(f"PROCESS-NAME,com.reddit.frontpage,{build.GROUP_GLOBAL}"),
+        )
+        self.assertLess(
+            text.index(f"PROCESS-NAME,com.reddit.frontpage,{build.GROUP_GLOBAL}"),
+            text.index(f"MATCH,{build.GROUP_FINAL}"),
+        )
+        group_block = text.split("proxy-groups:\n", 1)[1].split("rule-providers:", 1)[0]
+        def group_pos(name: str) -> int:
+            return group_block.index(f"  - name: \"{name}\"")
+
+        self.assertLess(group_pos(build.GROUP_18), group_pos(build.GROUP_MISSAV))
+        self.assertLess(group_pos(build.GROUP_MISSAV), group_pos(build.GROUP_SAFE))
+        self.assertLess(group_pos(build.GROUP_SAFE), group_pos(build.GROUP_GAME))
+        self.assertLess(group_pos(build.GROUP_GAME), group_pos(build.GROUP_NA))
+        self.assertLess(group_pos(build.GROUP_NA), group_pos(build.GROUP_GLOBAL))
+        self.assertLess(group_pos(build.GROUP_GLOBAL), group_pos(build.GROUP_FINAL))
+        self.assertNotIn("geolocation-!cn", text)
+        self.assertNotIn("GEOIP,!CN", text)
+        self.assertNotIn("ACL4SSR", build.render("backcn", [], [], ""))
+        self.assertIn(
+            f"{build.ACL4SSR_BASE}/Providers/ProxyGFWlist.yaml",
+            text,
+        )
 
 
 if __name__ == "__main__":

@@ -4,9 +4,10 @@ Version-controlled build pipeline for personal proxy rule configs. Takes a maint
 upstream ruleset, layers local overrides (回国 domain routing, DNS), and publishes a
 ready-to-subscribe routing profile per client.
 
-- **Today:** Shadowrocket, Clash/Hako (macOS/iOS), and Clash Verge Rev (Windows), each with 回国
-  (`backcn`) and 出国 (`cnip`) profiles.
-- **Planned:** sing-box config for Android (same `rules/` intent, different emitter).
+- **Today:** Shadowrocket, Clash/Hako (macOS/iOS), and Clash Verge Rev (Windows), each with
+  回国 (`backcn`) and 出国 (`cnip`) profiles; FlClash (Android) is **one** profile whose
+  `🎯 全球直连` / `🐟 漏网之鱼` groups you switch by location.
+- **Planned:** sing-box config for other Android clients (same `rules/` intent, different emitter).
 
 > This repo is worked on mainly by coding agents (Claude / Codex); the owner mainly
 > reviews. Read [`AGENTS.md`](AGENTS.md) before making changes. Open tasks in
@@ -50,10 +51,15 @@ the same file name while using different WireGuard client keys and addresses.
   DIRECT. So domains in [`rules/redirect-to-cn.list`](rules/redirect-to-cn.list) are
   injected at the top with the route that exits in China: `PROXY` in `backcn`, `DIRECT`
   in `cnip`. (First case: 小红书, diagnosed from a PacketTunnel log on 2026-07-15.)
-- **原神 routes by app/process, not by server IP.** The Clash Verge Rev profile includes
-  the `YuanShen.exe` process rule and an independent `原神` node selector. On other
-  clients, configure app-based routing in the client itself; those device-specific
-  settings are not represented in this repository.
+- **原神 routes by app/process, not by server IP.** Clash Verge Rev uses `YuanShen.exe` →
+  `原神`. FlClash uses `com.miHoYo.Yuanshen` → `游戏`, with the other NekoBox Android app
+  groups in [`rules/android-apps.list`](rules/android-apps.list).
+- **FlClash is one profile, not backcn/cnip.** Groups: `🇨🇦 北美`, `🎯 全球直连` (NekoBox 绕过 apps +
+  ACL4SSR GFW/media for the browser), `🎮 游戏` (原神 only), `🔞 18`, `🎬 missav`, `🛡️ 安全浏览`,
+  `🐟 漏网之鱼`. Abroad: set `🎯 全球直连=DIRECT`, `🐟 漏网之鱼`=China node. In CN: set `🎯 全球直连`=overseas node,
+  `🐟 漏网之鱼=DIRECT`. DNS is same-side: AliDNS via `🐟 漏网之鱼` / `🛡️ 安全浏览`, foreign
+  DoH (`--dns` / Cloudflare) via the other groups, `respect-rules` for the dial path.
+  `geolocation-!cn` is not used.
 - **China-domain list, inlined.** To make CN traffic route (and resolve) via the node
   instead of relying on `GEOIP,CN` — which forces a local/境外 DNS lookup and re-leaks CDN
   services — the builder inline-expands felixonmars `accelerated-domains.china.conf`
@@ -81,9 +87,11 @@ the same file name while using different WireGuard client keys and addresses.
 ```
 rules/redirect-to-cn.list      # client-agnostic: domains that must exit via the CN node
 rules/direct.list              # client-agnostic: optional local DIRECT exceptions
-docs/nekobox-route-snapshot.json # observed Android NekoBox rules; reference only
+rules/android-apps.list        # Android package -> 🇨🇦 北美 / 🎮 游戏 / 🎯 全球直连
+rules/policy-domains.list      # domain -> 18 / missav / 安全浏览
+docs/nekobox-route-snapshot.json # observed Android NekoBox rules; source for the lists above
 targets/shadowrocket/build.py  # emits the Shadowrocket sr-backcn.conf
-targets/clash/build.py         # emits Clash/Hako and Clash Verge Rev YAML profiles
+targets/clash/build.py         # emits Clash/Hako, Clash Verge Rev, and FlClash YAML profiles
 targets/sing-box/              # planned Android emitter (stub)
 .github/workflows/build.yml    # daily cron + on-push build, publish to GitHub Pages
 dist/                          # local build output (gitignored)
@@ -116,11 +124,20 @@ python targets/clash/build.py --platform verge --profile backcn \
   --rules rules/redirect-to-cn.list \
   --direct-rules rules/direct.list \
   --out dist/clash/clash-verge-backcn.yaml
+
+# FlClash Android: one profile; switch 🎯 全球直连 / 🐟 漏网之鱼 by location
+python targets/clash/build.py --platform flclash \
+  --rules rules/redirect-to-cn.list \
+  --direct-rules rules/direct.list \
+  --android-apps rules/android-apps.list \
+  --policy-domains rules/policy-domains.list \
+  --out dist/clash/flclash.yaml
+# add --dns "$NEXTDNS_DOH_URL" for the foreign-side DoH (else Cloudflare)
 ```
 
 ## Delivery
 
-CI builds on a daily cron (and on push) and publishes six files to **GitHub Pages**:
+CI builds on a daily cron (and on push) and publishes seven files to **GitHub Pages**:
 
 - `https://kbyshiyori.github.io/rulesv2/sr-backcn.conf`
 - `https://kbyshiyori.github.io/rulesv2/sr-cnip.conf`
@@ -128,6 +145,7 @@ CI builds on a daily cron (and on push) and publishes six files to **GitHub Page
 - `https://kbyshiyori.github.io/rulesv2/clash-cnip.yaml`
 - `https://kbyshiyori.github.io/rulesv2/clash-verge-backcn.yaml`
 - `https://kbyshiyori.github.io/rulesv2/clash-verge-cnip.yaml`
+- `https://kbyshiyori.github.io/rulesv2/flclash.yaml`
 
 Subscribe the matching client to its URL. For Clash, import a device-specific
 `private-provider.yaml` under the profile's **Proxy Sources**; keep that file private.
