@@ -75,16 +75,16 @@ subscription.
 
 | Group | What it matches | Typical pick |
 |-------|-----------------|--------------|
-| `🇨🇦 北美` | Chase, Citi, Discover, Experian, T-Life, U.S. Bank, YouTube **app** | US/PayPal node |
-| `🎯 全球直连` | the NekoBox 绕过 apps (minus YouTube/T-Life) **and** ACL4SSR `ProxyGFWlist` / `ProxyMedia` / `Telegram` for the browser | `DIRECT` when abroad; an overseas node when in CN |
-| `🎮 游戏` | 原神 (`com.miHoYo.Yuanshen`) only | JP/game node |
 | `🔞 18` | `18comic.vip`, `hanime1.me` | US/PayPal node |
 | `🎬 missav` | `missav.ai`, `missav.ws` | JP/game node |
 | `🛡️ 安全浏览` | `browsercrp.vivo.com.cn` | usually `DIRECT` |
+| `🎮 游戏` | 原神 (`com.miHoYo.Yuanshen`) only | JP/game node |
+| `🇨🇦 北美` | Chase, Citi, Discover, Experian, T-Life, U.S. Bank, YouTube **app** | CA/PayPal node |
+| `🎯 全球直连` | the NekoBox 绕过 apps (minus YouTube/T-Life) **and** ACL4SSR `ProxyGFWlist` / `ProxyMedia` / `Telegram` for the browser | `DIRECT` when abroad; an overseas node when in CN |
 | `🐟 漏网之鱼` | CN lists, `redirect-to-cn`, `GEOIP,CN`, unmatched `MATCH` | China node when abroad; `DIRECT` when in CN |
 
-`18` and `missav` are not merged into `北美` / `游戏`. YouTube and T-Life stay in `北美`
-because that rule sat above 绕过app on the phone. `com.follow.clash` is always `DIRECT`.
+Rules are emitted in that order, so domain groups win over app groups. YouTube **app** still beats the later YouTube rule-set.
+`18` and `missav` stay as their own groups. `com.follow.clash` is always `DIRECT`.
 Apps are `PROCESS-NAME` so they do not depend on foreign IP; ACL4SSR lists are for the
 browser. `geolocation-!cn` is not used.
 

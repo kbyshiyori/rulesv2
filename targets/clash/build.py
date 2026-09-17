@@ -35,7 +35,7 @@ GROUP_MISSAV = "🎬 missav"
 GROUP_SAFE = "🛡️ 安全浏览"
 GROUP_FINAL = "🐟 漏网之鱼"
 ANDROID_GROUPS = (GROUP_NA, GROUP_GAME, GROUP_GLOBAL)
-FLCLASH_SELECT_GROUPS = (GROUP_GLOBAL, GROUP_NA, GROUP_GAME, GROUP_18, GROUP_MISSAV, GROUP_SAFE)
+FLCLASH_SELECT_GROUPS = (GROUP_18, GROUP_MISSAV, GROUP_SAFE, GROUP_GAME, GROUP_NA, GROUP_GLOBAL)
 POLICY_DOMAIN_TARGETS = ANDROID_GROUPS + (GROUP_18, GROUP_MISSAV, GROUP_SAFE, GROUP_FINAL, "DIRECT", "PROXY", "REJECT")
 ALWAYS_DIRECT_PACKAGES = frozenset({"com.follow.clash"})
 
@@ -295,9 +295,9 @@ def render(
         "proxy-groups:",
     ])
     if platform == "flclash":
-        lines.extend(_select_group(GROUP_FINAL, ("DIRECT", "REJECT")))
         for name in FLCLASH_SELECT_GROUPS:
             lines.extend(_select_group(name, ("DIRECT", GROUP_FINAL)))
+        lines.extend(_select_group(GROUP_FINAL, ("DIRECT", "REJECT")))
     else:
         lines.extend([
             "  - name: PROXY",
@@ -336,15 +336,15 @@ def render(
     if platform == "verge":
         lines.append("  - PROCESS-NAME,YuanShen.exe,原神")
     if platform == "flclash":
-        for package in android_apps.get(GROUP_NA, []):
-            lines.append(f"  - PROCESS-NAME,{package},{GROUP_NA}")
+        lines.extend(f"  - {rule}" for rule in policy_domains)
         for package in android_apps.get(GROUP_GAME, []):
             lines.append(f"  - PROCESS-NAME,{package},{GROUP_GAME}")
+        for package in android_apps.get(GROUP_NA, []):
+            lines.append(f"  - PROCESS-NAME,{package},{GROUP_NA}")
         for package in android_apps.get(GROUP_GLOBAL, []):
             lines.append(f"  - PROCESS-NAME,{package},{GROUP_GLOBAL}")
         for package in ALWAYS_DIRECT_PACKAGES:
             lines.append(f"  - PROCESS-NAME,{package},DIRECT")
-        lines.extend(f"  - {rule}" for rule in policy_domains)
     lines.extend(f"  - {rule}" for rule in direct_rules)
     lines.extend(f"  - DOMAIN-SUFFIX,{domain},{cn_policy}" for domain in domains)
     lines.extend([

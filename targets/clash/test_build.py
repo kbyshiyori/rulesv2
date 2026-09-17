@@ -148,7 +148,40 @@ class BuildTests(unittest.TestCase):
         self.assertIn(f"RULE-SET,acl-cn-domain,{build.GROUP_FINAL}", text)
         self.assertIn(f"DOMAIN-SUFFIX,xiaohongshu.com,{build.GROUP_FINAL}", text)
         self.assertIn(f"GEOIP,CN,{build.GROUP_FINAL},no-resolve", text)
-        self.assertIn(f"MATCH,{build.GROUP_FINAL}", text)
+        self.assertLess(
+            text.index(f"DOMAIN-SUFFIX,18comic.vip,{build.GROUP_18}"),
+            text.index(f"DOMAIN-SUFFIX,missav.ai,{build.GROUP_MISSAV}"),
+        )
+        self.assertLess(
+            text.index(f"DOMAIN-SUFFIX,missav.ai,{build.GROUP_MISSAV}"),
+            text.index(f"DOMAIN-SUFFIX,browsercrp.vivo.com.cn,{build.GROUP_SAFE}"),
+        )
+        self.assertLess(
+            text.index(f"DOMAIN-SUFFIX,browsercrp.vivo.com.cn,{build.GROUP_SAFE}"),
+            text.index(f"PROCESS-NAME,com.miHoYo.Yuanshen,{build.GROUP_GAME}"),
+        )
+        self.assertLess(
+            text.index(f"PROCESS-NAME,com.miHoYo.Yuanshen,{build.GROUP_GAME}"),
+            text.index(f"PROCESS-NAME,com.chase.sig.android,{build.GROUP_NA}"),
+        )
+        self.assertLess(
+            text.index(f"PROCESS-NAME,com.chase.sig.android,{build.GROUP_NA}"),
+            text.index(f"PROCESS-NAME,com.reddit.frontpage,{build.GROUP_GLOBAL}"),
+        )
+        self.assertLess(
+            text.index(f"PROCESS-NAME,com.reddit.frontpage,{build.GROUP_GLOBAL}"),
+            text.index(f"MATCH,{build.GROUP_FINAL}"),
+        )
+        group_block = text.split("proxy-groups:\n", 1)[1].split("rule-providers:", 1)[0]
+        def group_pos(name: str) -> int:
+            return group_block.index(f"  - name: \"{name}\"")
+
+        self.assertLess(group_pos(build.GROUP_18), group_pos(build.GROUP_MISSAV))
+        self.assertLess(group_pos(build.GROUP_MISSAV), group_pos(build.GROUP_SAFE))
+        self.assertLess(group_pos(build.GROUP_SAFE), group_pos(build.GROUP_GAME))
+        self.assertLess(group_pos(build.GROUP_GAME), group_pos(build.GROUP_NA))
+        self.assertLess(group_pos(build.GROUP_NA), group_pos(build.GROUP_GLOBAL))
+        self.assertLess(group_pos(build.GROUP_GLOBAL), group_pos(build.GROUP_FINAL))
         self.assertNotIn("geolocation-!cn", text)
         self.assertNotIn("GEOIP,!CN", text)
         self.assertNotIn("ACL4SSR", build.render("backcn", [], [], ""))
