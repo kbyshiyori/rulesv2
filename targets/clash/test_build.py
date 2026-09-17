@@ -87,9 +87,9 @@ class BuildTests(unittest.TestCase):
             path = Path(directory) / "apps.list"
             path.write_text(
                 "北美,com.google.android.youtube,YouTube\n"
-                "国外,com.google.android.youtube,YouTube again\n"
-                "国外,com.Slack,Slack\n"
-                "国外,com.follow.clash,FIClash\n",
+                "全球直连,com.google.android.youtube,YouTube again\n"
+                "全球直连,com.Slack,Slack\n"
+                "全球直连,com.follow.clash,FIClash\n",
                 encoding="utf-8",
             )
             self.assertEqual(
@@ -97,7 +97,7 @@ class BuildTests(unittest.TestCase):
                 {
                     "北美": ["com.google.android.youtube"],
                     "游戏": [],
-                    "国外": ["com.Slack"],
+                    "全球直连": ["com.Slack"],
                 },
             )
 
@@ -126,29 +126,29 @@ class BuildTests(unittest.TestCase):
         self.assertIn("PROCESS-NAME,com.chase.sig.android,北美", text)
         self.assertIn("PROCESS-NAME,com.miHoYo.Yuanshen,游戏", text)
         self.assertIn("PROCESS-NAME,com.google.android.youtube,北美", text)
-        self.assertNotIn("PROCESS-NAME,com.google.android.youtube,国外", text)
-        self.assertIn("PROCESS-NAME,com.reddit.frontpage,国外", text)
+        self.assertNotIn("PROCESS-NAME,com.google.android.youtube,全球直连", text)
+        self.assertIn("PROCESS-NAME,com.reddit.frontpage,全球直连", text)
         self.assertIn("PROCESS-NAME,com.follow.clash,DIRECT", text)
-        self.assertNotIn("PROCESS-NAME,com.follow.clash,国外", text)
+        self.assertNotIn("PROCESS-NAME,com.follow.clash,全球直连", text)
         self.assertIn("DOMAIN-SUFFIX,18comic.vip,18", text)
         self.assertIn("DOMAIN-SUFFIX,missav.ai,missav", text)
         self.assertIn("DOMAIN-SUFFIX,browsercrp.vivo.com.cn,安全浏览", text)
         self.assertNotIn("DOMAIN-SUFFIX,18comic.vip,北美", text)
         self.assertNotIn("DOMAIN-SUFFIX,missav.ai,游戏", text)
-        self.assertIn("  - name: \"兜底\"\n    type: select", text)
-        self.assertIn("  - name: \"国外\"\n    type: select", text)
+        self.assertIn("  - name: \"漏网之鱼\"\n    type: select", text)
+        self.assertIn("  - name: \"全球直连\"\n    type: select", text)
         self.assertIn("  - name: \"18\"\n    type: select", text)
         self.assertIn("  - name: missav\n    type: select", text)
         self.assertIn("  - name: \"安全浏览\"\n    type: select", text)
         self.assertNotIn("  - name: YouTube\n", text)
-        self.assertIn("RULE-SET,youtube,国外", text)
-        self.assertIn("RULE-SET,acl-gfw,国外", text)
-        self.assertIn("RULE-SET,acl-proxy-media,国外", text)
-        self.assertIn("RULE-SET,acl-telegram,国外", text)
-        self.assertIn("RULE-SET,acl-cn-domain,兜底", text)
-        self.assertIn("DOMAIN-SUFFIX,xiaohongshu.com,兜底", text)
-        self.assertIn("GEOIP,CN,兜底,no-resolve", text)
-        self.assertIn("MATCH,兜底", text)
+        self.assertIn("RULE-SET,youtube,全球直连", text)
+        self.assertIn("RULE-SET,acl-gfw,全球直连", text)
+        self.assertIn("RULE-SET,acl-proxy-media,全球直连", text)
+        self.assertIn("RULE-SET,acl-telegram,全球直连", text)
+        self.assertIn("RULE-SET,acl-cn-domain,漏网之鱼", text)
+        self.assertIn("DOMAIN-SUFFIX,xiaohongshu.com,漏网之鱼", text)
+        self.assertIn("GEOIP,CN,漏网之鱼,no-resolve", text)
+        self.assertIn("MATCH,漏网之鱼", text)
         self.assertNotIn("geolocation-!cn", text)
         self.assertNotIn("GEOIP,!CN", text)
         self.assertNotIn("ACL4SSR", build.render("backcn", [], [], ""))

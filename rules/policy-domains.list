@@ -1,7 +1,7 @@
 # Destination rules that share an FlClash policy group, independent of GEOIP.
 #
 # Format: domain-suffix,<domain>,<group>
-# Groups: 北美 | 游戏 | 国外 | 18 | missav | 安全浏览 | 兜底 | DIRECT | PROXY | REJECT
+# Groups: 北美 | 游戏 | 全球直连 | 18 | missav | 安全浏览 | 漏网之鱼 | DIRECT | PROXY | REJECT
 #
 # Source: docs/nekobox-route-snapshot.json
 #   18 / missav stay as their own groups (do not merge into 北美 or 游戏).
