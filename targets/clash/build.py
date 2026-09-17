@@ -25,6 +25,7 @@ YOUTUBE_URL = (
 )
 ACL4SSR_BASE = "https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash"
 PRIVATE_PROVIDER_PATH = "./providers/private-provider.yaml"
+HEALTH_CHECK_URL = "https://captive.apple.com"
 CN_DNS = "https://223.5.5.5/dns-query"
 FOREIGN_DNS_DEFAULT = "https://1.1.1.1/dns-query"
 PLATFORMS = ("hako", "verge", "flclash")
@@ -321,7 +322,8 @@ def render(
         f"    path: {quote(PRIVATE_PROVIDER_PATH)}",
         "    health-check:",
         "      enable: true",
-        '      url: "https://www.gstatic.com/generate_204"',
+        f"      url: {quote(HEALTH_CHECK_URL)}",
+        "      expected-status: 200",
         "      interval: 600",
         "      lazy: true",
         "proxy-groups:",
