@@ -81,8 +81,8 @@ subscription.
 | `🎬 missav` | `missav.ai`, `missav.ws` | JP/game node |
 | `🛡️ 安全浏览` | `browsercrp.vivo.com.cn` | usually `DIRECT` |
 | `🎮 游戏` | 原神 (`com.miHoYo.Yuanshen`) **and** hoyoverse/mihoyo suffixes | JP/game node |
-| `🇨🇦 北美` | Chase, Citi, Discover, Experian, T-Life, U.S. Bank, YouTube **app**, plus those banks' suffixes | CA/PayPal node |
-| `🎯 全球直连` | the NekoBox 绕过 apps (minus YouTube/T-Life) **and** ACL4SSR `ProxyGFWlist` / `ProxyMedia` / `Telegram` for the browser | `DIRECT` when abroad; an overseas node when in CN |
+| `🇨🇦 北美` | Chase, Citi, Discover, Experian, T-Life, U.S. Bank, YouTube **app**, Muse, plus those banks' suffixes | CA/PayPal node |
+| `🎯 全球直连` | the NekoBox 绕过 apps (minus YouTube/T-Life/Muse) **and** ACL4SSR `ProxyGFWlist` / `ProxyMedia` / `Telegram` for the browser | `DIRECT` when abroad; an overseas node when in CN |
 | `🐟 漏网之鱼` | CN lists, `redirect-to-cn`, `GEOIP,CN`, unmatched `MATCH` | China node when abroad; `DIRECT` when in CN |
 
 Rules are emitted in that order, so domain groups win over app groups. YouTube **app** still beats the later YouTube rule-set.

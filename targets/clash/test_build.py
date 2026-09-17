@@ -145,6 +145,8 @@ class BuildTests(unittest.TestCase):
         self.assertIn(f"PROCESS-NAME,com.miHoYo.Yuanshen,{build.GROUP_GAME}", text)
         self.assertIn(f"PROCESS-NAME,com.google.android.youtube,{build.GROUP_NA}", text)
         self.assertNotIn(f"PROCESS-NAME,com.google.android.youtube,{build.GROUP_GLOBAL}", text)
+        self.assertIn(f"PROCESS-NAME,com.facebook.aura,{build.GROUP_NA}", text)
+        self.assertNotIn(f"PROCESS-NAME,com.facebook.aura,{build.GROUP_GLOBAL}", text)
         self.assertIn(f"PROCESS-NAME,com.reddit.frontpage,{build.GROUP_GLOBAL}", text)
         self.assertIn("PROCESS-NAME,com.follow.clash,DIRECT", text)
         self.assertNotIn(f"PROCESS-NAME,com.follow.clash,{build.GROUP_GLOBAL}", text)
