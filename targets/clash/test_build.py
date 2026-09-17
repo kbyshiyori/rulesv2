@@ -86,18 +86,18 @@ class BuildTests(unittest.TestCase):
         with TemporaryDirectory() as directory:
             path = Path(directory) / "apps.list"
             path.write_text(
-                "北美,com.google.android.youtube,YouTube\n"
-                "全球直连,com.google.android.youtube,YouTube again\n"
-                "全球直连,com.Slack,Slack\n"
-                "全球直连,com.follow.clash,FIClash\n",
+                "🇨🇦 北美,com.google.android.youtube,YouTube\n"
+                "🎯 全球直连,com.google.android.youtube,YouTube again\n"
+                "🎯 全球直连,com.Slack,Slack\n"
+                "🎯 全球直连,com.follow.clash,FIClash\n",
                 encoding="utf-8",
             )
             self.assertEqual(
                 build.load_android_apps(str(path)),
                 {
-                    "北美": ["com.google.android.youtube"],
-                    "游戏": [],
-                    "全球直连": ["com.Slack"],
+                    "🇨🇦 北美": ["com.google.android.youtube"],
+                    "🎮 游戏": [],
+                    "🎯 全球直连": ["com.Slack"],
                 },
             )
 
@@ -123,32 +123,32 @@ class BuildTests(unittest.TestCase):
         self.assertNotIn("223.5.5.5", text)
         self.assertNotIn("dns.example", text)
         self.assertNotIn("enhanced-mode: fake-ip", text)
-        self.assertIn("PROCESS-NAME,com.chase.sig.android,北美", text)
-        self.assertIn("PROCESS-NAME,com.miHoYo.Yuanshen,游戏", text)
-        self.assertIn("PROCESS-NAME,com.google.android.youtube,北美", text)
-        self.assertNotIn("PROCESS-NAME,com.google.android.youtube,全球直连", text)
-        self.assertIn("PROCESS-NAME,com.reddit.frontpage,全球直连", text)
+        self.assertIn(f"PROCESS-NAME,com.chase.sig.android,{build.GROUP_NA}", text)
+        self.assertIn(f"PROCESS-NAME,com.miHoYo.Yuanshen,{build.GROUP_GAME}", text)
+        self.assertIn(f"PROCESS-NAME,com.google.android.youtube,{build.GROUP_NA}", text)
+        self.assertNotIn(f"PROCESS-NAME,com.google.android.youtube,{build.GROUP_GLOBAL}", text)
+        self.assertIn(f"PROCESS-NAME,com.reddit.frontpage,{build.GROUP_GLOBAL}", text)
         self.assertIn("PROCESS-NAME,com.follow.clash,DIRECT", text)
-        self.assertNotIn("PROCESS-NAME,com.follow.clash,全球直连", text)
-        self.assertIn("DOMAIN-SUFFIX,18comic.vip,18", text)
-        self.assertIn("DOMAIN-SUFFIX,missav.ai,missav", text)
-        self.assertIn("DOMAIN-SUFFIX,browsercrp.vivo.com.cn,安全浏览", text)
-        self.assertNotIn("DOMAIN-SUFFIX,18comic.vip,北美", text)
-        self.assertNotIn("DOMAIN-SUFFIX,missav.ai,游戏", text)
-        self.assertIn("  - name: \"漏网之鱼\"\n    type: select", text)
-        self.assertIn("  - name: \"全球直连\"\n    type: select", text)
-        self.assertIn("  - name: \"18\"\n    type: select", text)
-        self.assertIn("  - name: missav\n    type: select", text)
-        self.assertIn("  - name: \"安全浏览\"\n    type: select", text)
+        self.assertNotIn(f"PROCESS-NAME,com.follow.clash,{build.GROUP_GLOBAL}", text)
+        self.assertIn(f"DOMAIN-SUFFIX,18comic.vip,{build.GROUP_18}", text)
+        self.assertIn(f"DOMAIN-SUFFIX,missav.ai,{build.GROUP_MISSAV}", text)
+        self.assertIn(f"DOMAIN-SUFFIX,browsercrp.vivo.com.cn,{build.GROUP_SAFE}", text)
+        self.assertNotIn(f"DOMAIN-SUFFIX,18comic.vip,{build.GROUP_NA}", text)
+        self.assertNotIn(f"DOMAIN-SUFFIX,missav.ai,{build.GROUP_GAME}", text)
+        self.assertIn(f"  - name: \"{build.GROUP_FINAL}\"\n    type: select", text)
+        self.assertIn(f"  - name: \"{build.GROUP_GLOBAL}\"\n    type: select", text)
+        self.assertIn(f"  - name: \"{build.GROUP_18}\"\n    type: select", text)
+        self.assertIn(f"  - name: \"{build.GROUP_MISSAV}\"\n    type: select", text)
+        self.assertIn(f"  - name: \"{build.GROUP_SAFE}\"\n    type: select", text)
         self.assertNotIn("  - name: YouTube\n", text)
-        self.assertIn("RULE-SET,youtube,全球直连", text)
-        self.assertIn("RULE-SET,acl-gfw,全球直连", text)
-        self.assertIn("RULE-SET,acl-proxy-media,全球直连", text)
-        self.assertIn("RULE-SET,acl-telegram,全球直连", text)
-        self.assertIn("RULE-SET,acl-cn-domain,漏网之鱼", text)
-        self.assertIn("DOMAIN-SUFFIX,xiaohongshu.com,漏网之鱼", text)
-        self.assertIn("GEOIP,CN,漏网之鱼,no-resolve", text)
-        self.assertIn("MATCH,漏网之鱼", text)
+        self.assertIn(f"RULE-SET,youtube,{build.GROUP_GLOBAL}", text)
+        self.assertIn(f"RULE-SET,acl-gfw,{build.GROUP_GLOBAL}", text)
+        self.assertIn(f"RULE-SET,acl-proxy-media,{build.GROUP_GLOBAL}", text)
+        self.assertIn(f"RULE-SET,acl-telegram,{build.GROUP_GLOBAL}", text)
+        self.assertIn(f"RULE-SET,acl-cn-domain,{build.GROUP_FINAL}", text)
+        self.assertIn(f"DOMAIN-SUFFIX,xiaohongshu.com,{build.GROUP_FINAL}", text)
+        self.assertIn(f"GEOIP,CN,{build.GROUP_FINAL},no-resolve", text)
+        self.assertIn(f"MATCH,{build.GROUP_FINAL}", text)
         self.assertNotIn("geolocation-!cn", text)
         self.assertNotIn("GEOIP,!CN", text)
         self.assertNotIn("ACL4SSR", build.render("backcn", [], [], ""))

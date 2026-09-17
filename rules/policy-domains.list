@@ -1,14 +1,14 @@
 # Destination rules that share an FlClash policy group, independent of GEOIP.
 #
 # Format: domain-suffix,<domain>,<group>
-# Groups: 北美 | 游戏 | 全球直连 | 18 | missav | 安全浏览 | 漏网之鱼 | DIRECT | PROXY | REJECT
+# Groups: 🇨🇦 北美 | 🎮 游戏 | 🎯 全球直连 | 🔞 18 | 🎬 missav | 🛡️ 安全浏览 | 🐟 漏网之鱼
 #
 # Source: docs/nekobox-route-snapshot.json
 #   18 / missav stay as their own groups (do not merge into 北美 or 游戏).
 #   安全浏览 is vivo's browser CRP host.
 
-domain-suffix,18comic.vip,18
-domain-suffix,hanime1.me,18
-domain-suffix,missav.ai,missav
-domain-suffix,missav.ws,missav
-domain-suffix,browsercrp.vivo.com.cn,安全浏览
+domain-suffix,18comic.vip,🔞 18
+domain-suffix,hanime1.me,🔞 18
+domain-suffix,missav.ai,🎬 missav
+domain-suffix,missav.ws,🎬 missav
+domain-suffix,browsercrp.vivo.com.cn,🛡️ 安全浏览

@@ -81,9 +81,9 @@ python targets/clash/build.py --platform flclash \
   --android-apps rules/android-apps.list \
   --policy-domains rules/policy-domains.list \
   --out /tmp/flclash.yaml
-grep -n 'PROCESS-NAME,com.chase.sig.android,北美' /tmp/flclash.yaml
-grep -n 'RULE-SET,acl-gfw,全球直连' /tmp/flclash.yaml
-grep -n 'MATCH,漏网之鱼' /tmp/flclash.yaml
+grep -n 'PROCESS-NAME,com.chase.sig.android,🇨🇦 北美' /tmp/flclash.yaml
+grep -n 'RULE-SET,acl-gfw,🎯 全球直连' /tmp/flclash.yaml
+grep -n 'MATCH,🐟 漏网之鱼' /tmp/flclash.yaml
 grep -n 'respect-rules: true' /tmp/flclash.yaml
 ```
 

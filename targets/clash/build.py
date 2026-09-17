@@ -27,9 +27,16 @@ ACL4SSR_BASE = "https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash"
 PRIVATE_PROVIDER_PATH = "./providers/private-provider.yaml"
 CN_DNS = "https://223.5.5.5/dns-query"
 PLATFORMS = ("hako", "verge", "flclash")
-ANDROID_GROUPS = ("北美", "游戏", "全球直连")
-FLCLASH_SELECT_GROUPS = ("全球直连", "北美", "游戏", "18", "missav", "安全浏览")
-POLICY_DOMAIN_TARGETS = ANDROID_GROUPS + ("18", "missav", "安全浏览", "漏网之鱼", "DIRECT", "PROXY", "REJECT")
+GROUP_NA = "🇨🇦 北美"
+GROUP_GAME = "🎮 游戏"
+GROUP_GLOBAL = "🎯 全球直连"
+GROUP_18 = "🔞 18"
+GROUP_MISSAV = "🎬 missav"
+GROUP_SAFE = "🛡️ 安全浏览"
+GROUP_FINAL = "🐟 漏网之鱼"
+ANDROID_GROUPS = (GROUP_NA, GROUP_GAME, GROUP_GLOBAL)
+FLCLASH_SELECT_GROUPS = (GROUP_GLOBAL, GROUP_NA, GROUP_GAME, GROUP_18, GROUP_MISSAV, GROUP_SAFE)
+POLICY_DOMAIN_TARGETS = ANDROID_GROUPS + (GROUP_18, GROUP_MISSAV, GROUP_SAFE, GROUP_FINAL, "DIRECT", "PROXY", "REJECT")
 ALWAYS_DIRECT_PACKAGES = frozenset({"com.follow.clash"})
 
 ACL4SSR_PROVIDERS = (
@@ -225,11 +232,11 @@ def render(
     android_apps = android_apps or {name: [] for name in ANDROID_GROUPS}
     policy_domains = policy_domains or []
     if platform == "flclash":
-        cn_policy = "漏网之鱼"
-        fallback = "漏网之鱼"
-        foreign_policy = "全球直连"
-        youtube_policy = "全球直连"
-        profile_label = "single FlClash profile; switch 全球直连/漏网之鱼 by location"
+        cn_policy = GROUP_FINAL
+        fallback = GROUP_FINAL
+        foreign_policy = GROUP_GLOBAL
+        youtube_policy = GROUP_GLOBAL
+        profile_label = "single FlClash profile; switch 🎯 全球直连 / 🐟 漏网之鱼 by location"
     else:
         cn_policy = "PROXY" if profile == "backcn" else "DIRECT"
         fallback = "DIRECT" if profile == "backcn" else "PROXY"
@@ -288,9 +295,9 @@ def render(
         "proxy-groups:",
     ])
     if platform == "flclash":
-        lines.extend(_select_group("漏网之鱼", ("DIRECT", "REJECT")))
+        lines.extend(_select_group(GROUP_FINAL, ("DIRECT", "REJECT")))
         for name in FLCLASH_SELECT_GROUPS:
-            lines.extend(_select_group(name, ("DIRECT", "漏网之鱼")))
+            lines.extend(_select_group(name, ("DIRECT", GROUP_FINAL)))
     else:
         lines.extend([
             "  - name: PROXY",
@@ -329,12 +336,12 @@ def render(
     if platform == "verge":
         lines.append("  - PROCESS-NAME,YuanShen.exe,原神")
     if platform == "flclash":
-        for package in android_apps.get("北美", []):
-            lines.append(f"  - PROCESS-NAME,{package},北美")
-        for package in android_apps.get("游戏", []):
-            lines.append(f"  - PROCESS-NAME,{package},游戏")
-        for package in android_apps.get("全球直连", []):
-            lines.append(f"  - PROCESS-NAME,{package},全球直连")
+        for package in android_apps.get(GROUP_NA, []):
+            lines.append(f"  - PROCESS-NAME,{package},{GROUP_NA}")
+        for package in android_apps.get(GROUP_GAME, []):
+            lines.append(f"  - PROCESS-NAME,{package},{GROUP_GAME}")
+        for package in android_apps.get(GROUP_GLOBAL, []):
+            lines.append(f"  - PROCESS-NAME,{package},{GROUP_GLOBAL}")
         for package in ALWAYS_DIRECT_PACKAGES:
             lines.append(f"  - PROCESS-NAME,{package},DIRECT")
         lines.extend(f"  - {rule}" for rule in policy_domains)

@@ -10,7 +10,7 @@ The same builder and client-agnostic `rules/` lists produce each client's profil
   `PROXY`.
 - `clash-verge-backcn.yaml` / `clash-verge-cnip.yaml`: the corresponding Windows
   profiles, with an additional `YuanShen.exe` process rule.
-- `flclash.yaml`: one Android FlClash profile. Switch `全球直连` and `漏网之鱼` by location;
+- `flclash.yaml`: one Android FlClash profile. Switch `🎯 全球直连` and `🐟 漏网之鱼` by location;
   NekoBox app groups plus ACL4SSR foreign/CN lists. DNS follows the selected node.
 
 The Hako/Verge profiles use MetaCubeX `cn.mrs`, `cn-ip.mrs`, `youtube.mrs`, and
@@ -75,13 +75,13 @@ subscription.
 
 | Group | What it matches | Typical pick |
 |-------|-----------------|--------------|
-| `北美` | Chase, Citi, Discover, Experian, T-Life, U.S. Bank, YouTube **app** | US/PayPal node |
-| `全球直连` | the NekoBox 绕过 apps (minus YouTube/T-Life) **and** ACL4SSR `ProxyGFWlist` / `ProxyMedia` / `Telegram` for the browser | `DIRECT` when abroad; an overseas node when in CN |
-| `游戏` | 原神 (`com.miHoYo.Yuanshen`) only | JP/game node |
-| `18` | `18comic.vip`, `hanime1.me` | US/PayPal node |
-| `missav` | `missav.ai`, `missav.ws` | JP/game node |
-| `安全浏览` | `browsercrp.vivo.com.cn` | usually `DIRECT` |
-| `漏网之鱼` | CN lists, `redirect-to-cn`, `GEOIP,CN`, unmatched `MATCH` | China node when abroad; `DIRECT` when in CN |
+| `🇨🇦 北美` | Chase, Citi, Discover, Experian, T-Life, U.S. Bank, YouTube **app** | US/PayPal node |
+| `🎯 全球直连` | the NekoBox 绕过 apps (minus YouTube/T-Life) **and** ACL4SSR `ProxyGFWlist` / `ProxyMedia` / `Telegram` for the browser | `DIRECT` when abroad; an overseas node when in CN |
+| `🎮 游戏` | 原神 (`com.miHoYo.Yuanshen`) only | JP/game node |
+| `🔞 18` | `18comic.vip`, `hanime1.me` | US/PayPal node |
+| `🎬 missav` | `missav.ai`, `missav.ws` | JP/game node |
+| `🛡️ 安全浏览` | `browsercrp.vivo.com.cn` | usually `DIRECT` |
+| `🐟 漏网之鱼` | CN lists, `redirect-to-cn`, `GEOIP,CN`, unmatched `MATCH` | China node when abroad; `DIRECT` when in CN |
 
 `18` and `missav` are not merged into `北美` / `游戏`. YouTube and T-Life stay in `北美`
 because that rule sat above 绕过app on the phone. `com.follow.clash` is always `DIRECT`.
