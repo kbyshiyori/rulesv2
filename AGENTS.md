@@ -18,6 +18,12 @@ python3.12 targets/clash/build.py --profile backcn \
   --rules rules/redirect-to-cn.list \
   --direct-rules rules/direct.list \
   --out /tmp/clash-backcn.yaml
+python3.12 targets/clash/build.py --platform flclash --profile backcn \
+  --rules rules/redirect-to-cn.list \
+  --direct-rules rules/direct.list \
+  --android-apps rules/android-apps.list \
+  --policy-domains rules/policy-domains.list \
+  --out /tmp/flclash-backcn.yaml
 ```
 
 The tests and Clash build work offline. A normal Shadowrocket build fetches the
@@ -68,6 +74,16 @@ python targets/shadowrocket/build.py --rules rules/redirect-to-cn.list \
 grep -n 'rulesv2 redirect-to-cn' /tmp/sr-backcn.conf      # markers present once
 grep -n 'DOMAIN-SUFFIX,xiaohongshu.com,PROXY' /tmp/sr-backcn.conf   # rules injected
 grep -n '^\[Rule\]' /tmp/sr-backcn.conf                   # injected right after [Rule]
+
+python targets/clash/build.py --platform flclash --profile backcn \
+  --rules rules/redirect-to-cn.list \
+  --direct-rules rules/direct.list \
+  --android-apps rules/android-apps.list \
+  --policy-domains rules/policy-domains.list \
+  --out /tmp/flclash-backcn.yaml
+grep -n 'PROCESS-NAME,com.chase.sig.android,北美' /tmp/flclash-backcn.yaml
+grep -n 'RULE-SET,acl-gfw,DIRECT' /tmp/flclash-backcn.yaml
+grep -n 'MATCH,DIRECT' /tmp/flclash-backcn.yaml
 ```
 
 For a DNS change also pass `--dns 'https://dns.nextdns.io/PLACEHOLDER'` and confirm the

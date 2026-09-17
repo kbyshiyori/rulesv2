@@ -3,7 +3,7 @@
   "client": "NekoBox (Android)",
   "observed_on": "2026-09-18",
   "source": "vivo phone screen, NekoBox route page and app pickers",
-  "purpose": "Read-only snapshot for agents; not a build input or deployable config",
+  "purpose": "Observed NekoBox routes. App/domain groups were copied into rules/android-apps.list and rules/policy-domains.list for the FlClash emitter. Not itself a deployable config.",
   "notes": [
     "Rules are listed in the order shown in NekoBox. China-specific and disabled blocking rules were omitted at the owner's request.",
     "The owner renamed miss to missav and 域名规则 to 国外url in this reference file; these are not verified as names on the phone.",

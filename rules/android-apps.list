@@ -1,0 +1,54 @@
+# Android package routing for FlClash (and later other Android clients).
+#
+# Format: group,package,label
+# Groups:
+#   北美  -> select group (US/PayPal-style exit)
+#   游戏  -> select group (JP/game exit)
+#   绕过  -> DIRECT on backcn; omitted on cnip except the VPN client itself
+#
+# Source: docs/nekobox-route-snapshot.json (vivo NekoBox route page).
+# First group wins if a package appears twice. YouTube and T-Life are 北美-only
+# because that rule was above 绕过app on the phone.
+
+# 北美app -> Dmit-Beanfield-Paypal
+北美,com.chase.sig.android,Chase
+北美,com.citi.citimobile,Citi Mobile
+北美,com.discoverfinancial.mobile,Discover
+北美,com.experian.android,Experian
+北美,com.tmobile.tuesdays,T-Life
+北美,com.usbank.mobilebanking,U.S. Bank
+北美,com.google.android.youtube,YouTube
+
+# 游戏 -> JPTY1-Game
+游戏,com.miHoYo.Yuanshen,原神
+
+# 绕过app -> DIRECT. YouTube / T-Life omitted (北美 already claimed them).
+# Snapshot reported 31 apps / 30 visible; the missing package is still unverified.
+绕过,ee.nekoko.nlpa.flavor1,9eSIM
+绕过,com.google.android.projection.gearhead,Android Auto
+绕过,com.google.android.webview,Android System WebView
+绕过,com.google.android.marvin.talkback,Android 无障碍套件
+绕过,com.apple.android.music,Apple Music
+绕过,com.azure.authenticator,Authenticator
+绕过,com.google.android.configupdater,ConfigUpdater
+绕过,com.follow.clash,FIClash
+绕过,com.samsung.accessory.jellymgr,Galaxy Buds3
+绕过,com.google.android.googlequicksearchbox,Google
+绕过,com.android.vending,Google Play 商店
+绕过,com.google.android.gms,Google Play 服务
+绕过,com.google.android.syncadapters.calendar,Google 日历同步
+绕过,com.google.android.gsf,Google 服务框架
+绕过,com.facebook.aura,Muse
+绕过,com.okta.android.auth,Okta Verify
+绕过,com.microsoft.office.outlook,Outlook
+绕过,com.paypal.android.p2pmobile,PayPal
+绕过,com.picacg.picacomic,PicACG
+绕过,com.google.android.printservice.recommendation,Print Service Recommendation Service
+绕过,com.reddit.frontpage,Reddit
+绕过,com.moneybookers.skrillpayments,Skrill
+绕过,com.Slack,Slack
+绕过,com.twitter.android,X
+绕过,com.hush.yamby,Yamby
+绕过,us.zoom.videomeetings,Zoom
+绕过,com.kddi.kdla.jp,povo2.0
+绕过,com.samsung.android.app.watchmanager,三星智能穿戴

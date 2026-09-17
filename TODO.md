@@ -38,6 +38,8 @@ end-to-end locally and in CI, which now **publishes the built config to GitHub P
       `sr-cnip.conf` alongside the backcn profile.
 - [x] **Build native Clash/Hako profiles** for both directions using iOS-friendly MRS
       providers and a local-only private provider URL.
+- [x] **FlClash Android profiles** with NekoBox app groups and ACL4SSR foreign/CN lists
+      (no `geolocation-!cn`).
 - [ ] **Evaluate GMOogway reject module** as a higher-quality 境内 ad source layered on top
       of the Johnshall base.
 - [ ] **CI hardening:** fail the build if the injected block is missing/duplicated or if
