@@ -87,8 +87,9 @@ class BuildTests(unittest.TestCase):
             path = Path(directory) / "apps.list"
             path.write_text(
                 "北美,com.google.android.youtube,YouTube\n"
-                "绕过,com.google.android.youtube,YouTube again\n"
-                "绕过,com.Slack,Slack\n",
+                "国外,com.google.android.youtube,YouTube again\n"
+                "国外,com.Slack,Slack\n"
+                "国外,com.follow.clash,FIClash\n",
                 encoding="utf-8",
             )
             self.assertEqual(
@@ -96,57 +97,64 @@ class BuildTests(unittest.TestCase):
                 {
                     "北美": ["com.google.android.youtube"],
                     "游戏": [],
-                    "绕过": ["com.Slack"],
+                    "国外": ["com.Slack"],
                 },
             )
 
-    def test_flclash_writes_nekobox_groups_and_acl4ssr_instead_of_geolocation_not_cn(
-        self,
-    ) -> None:
+    def test_flclash_is_a_single_profile_with_location_switch_groups(self) -> None:
         root = Path(__file__).resolve().parents[2]
         apps = build.load_android_apps(str(root / "rules" / "android-apps.list"))
         policy_domains = build.load_policy_domains(
             str(root / "rules" / "policy-domains.list")
         )
-        backcn = build.render(
-            "backcn", ["xiaohongshu.com"], [], "", "flclash", apps, policy_domains,
+        text = build.render(
+            "backcn", ["xiaohongshu.com"], [],
+            "https://dns.example/dns-query", "flclash", apps, policy_domains,
         )
-        cnip = build.render(
-            "cnip", ["xiaohongshu.com"], [], "", "flclash", apps, policy_domains,
+        same_if_cnip = build.render(
+            "cnip", ["xiaohongshu.com"], [],
+            "https://dns.example/dns-query", "flclash", apps, policy_domains,
         )
-
-        self.assertIn("find-process-mode: always", backcn)
-        self.assertIn("PROCESS-NAME,com.chase.sig.android,北美", backcn)
-        self.assertIn("PROCESS-NAME,com.miHoYo.Yuanshen,游戏", backcn)
-        self.assertIn("PROCESS-NAME,com.google.android.youtube,北美", backcn)
-        self.assertNotIn("PROCESS-NAME,com.google.android.youtube,DIRECT", backcn)
-        self.assertIn("PROCESS-NAME,com.tmobile.tuesdays,北美", backcn)
-        self.assertNotIn("PROCESS-NAME,com.tmobile.tuesdays,DIRECT", backcn)
-        self.assertIn("PROCESS-NAME,com.reddit.frontpage,DIRECT", backcn)
-        self.assertNotIn("PROCESS-NAME,com.reddit.frontpage,DIRECT", cnip)
-        self.assertIn("PROCESS-NAME,com.follow.clash,DIRECT", cnip)
-        self.assertIn("DOMAIN-SUFFIX,18comic.vip,北美", backcn)
-        self.assertIn("DOMAIN-SUFFIX,missav.ai,游戏", backcn)
-        self.assertIn("DOMAIN-SUFFIX,browsercrp.vivo.com.cn,DIRECT", backcn)
-        self.assertIn("  - name: \"北美\"\n    type: select", backcn)
-        self.assertIn("  - name: \"游戏\"\n    type: select", backcn)
-        self.assertIn("RULE-SET,acl-gfw,DIRECT", backcn)
-        self.assertIn("RULE-SET,acl-proxy-media,DIRECT", backcn)
-        self.assertIn("RULE-SET,acl-telegram,DIRECT", backcn)
-        self.assertIn("RULE-SET,acl-cn-domain,PROXY", backcn)
-        self.assertIn("GEOIP,CN,PROXY,no-resolve", backcn)
-        self.assertIn("MATCH,DIRECT", backcn)
-        self.assertIn("RULE-SET,acl-gfw,PROXY", cnip)
-        self.assertIn("RULE-SET,acl-cn-domain,DIRECT", cnip)
-        self.assertIn("GEOIP,CN,DIRECT,no-resolve", cnip)
-        self.assertIn("MATCH,PROXY", cnip)
-        self.assertNotIn("geolocation-!cn", backcn)
-        self.assertNotIn("GEOIP,!CN", backcn)
+        self.assertEqual(text, same_if_cnip)
+        self.assertIn("find-process-mode: always", text)
+        self.assertIn("enhanced-mode: redir-host", text)
+        self.assertIn("respect-rules: true", text)
+        self.assertNotIn("nameserver-policy:", text)
+        self.assertNotIn("223.5.5.5", text)
+        self.assertNotIn("dns.example", text)
+        self.assertNotIn("enhanced-mode: fake-ip", text)
+        self.assertIn("PROCESS-NAME,com.chase.sig.android,北美", text)
+        self.assertIn("PROCESS-NAME,com.miHoYo.Yuanshen,游戏", text)
+        self.assertIn("PROCESS-NAME,com.google.android.youtube,北美", text)
+        self.assertNotIn("PROCESS-NAME,com.google.android.youtube,国外", text)
+        self.assertIn("PROCESS-NAME,com.reddit.frontpage,国外", text)
+        self.assertIn("PROCESS-NAME,com.follow.clash,DIRECT", text)
+        self.assertNotIn("PROCESS-NAME,com.follow.clash,国外", text)
+        self.assertIn("DOMAIN-SUFFIX,18comic.vip,18", text)
+        self.assertIn("DOMAIN-SUFFIX,missav.ai,missav", text)
+        self.assertIn("DOMAIN-SUFFIX,browsercrp.vivo.com.cn,安全浏览", text)
+        self.assertNotIn("DOMAIN-SUFFIX,18comic.vip,北美", text)
+        self.assertNotIn("DOMAIN-SUFFIX,missav.ai,游戏", text)
+        self.assertIn("  - name: \"兜底\"\n    type: select", text)
+        self.assertIn("  - name: \"国外\"\n    type: select", text)
+        self.assertIn("  - name: \"18\"\n    type: select", text)
+        self.assertIn("  - name: missav\n    type: select", text)
+        self.assertIn("  - name: \"安全浏览\"\n    type: select", text)
+        self.assertNotIn("  - name: YouTube\n", text)
+        self.assertIn("RULE-SET,youtube,国外", text)
+        self.assertIn("RULE-SET,acl-gfw,国外", text)
+        self.assertIn("RULE-SET,acl-proxy-media,国外", text)
+        self.assertIn("RULE-SET,acl-telegram,国外", text)
+        self.assertIn("RULE-SET,acl-cn-domain,兜底", text)
+        self.assertIn("DOMAIN-SUFFIX,xiaohongshu.com,兜底", text)
+        self.assertIn("GEOIP,CN,兜底,no-resolve", text)
+        self.assertIn("MATCH,兜底", text)
+        self.assertNotIn("geolocation-!cn", text)
+        self.assertNotIn("GEOIP,!CN", text)
         self.assertNotIn("ACL4SSR", build.render("backcn", [], [], ""))
-        self.assertNotIn("PROCESS-NAME,com.chase.sig.android", build.render("backcn", [], [], ""))
         self.assertIn(
             f"{build.ACL4SSR_BASE}/Providers/ProxyGFWlist.yaml",
-            backcn,
+            text,
         )
 
 

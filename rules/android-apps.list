@@ -2,15 +2,16 @@
 #
 # Format: group,package,label
 # Groups:
-#   北美  -> select group (US/PayPal-style exit)
-#   游戏  -> select group (JP/game exit)
-#   绕过  -> DIRECT on backcn; omitted on cnip except the VPN client itself
+#   北美  -> select (US/PayPal-style exit)
+#   游戏  -> select (currently 原神 only)
+#   国外  -> select: DIRECT when abroad, an overseas node when in CN
 #
 # Source: docs/nekobox-route-snapshot.json (vivo NekoBox route page).
 # First group wins if a package appears twice. YouTube and T-Life are 北美-only
 # because that rule was above 绕过app on the phone.
+# com.follow.clash is omitted here; the emitter always pins it to DIRECT.
 
-# 北美app -> Dmit-Beanfield-Paypal
+# 北美app
 北美,com.chase.sig.android,Chase
 北美,com.citi.citimobile,Citi Mobile
 北美,com.discoverfinancial.mobile,Discover
@@ -19,36 +20,35 @@
 北美,com.usbank.mobilebanking,U.S. Bank
 北美,com.google.android.youtube,YouTube
 
-# 游戏 -> JPTY1-Game
+# 游戏 (原神 only; missav is a separate domain group)
 游戏,com.miHoYo.Yuanshen,原神
 
-# 绕过app -> DIRECT. YouTube / T-Life omitted (北美 already claimed them).
+# NekoBox 绕过app -> 国外. YouTube / T-Life omitted (北美 already claimed them).
 # Snapshot reported 31 apps / 30 visible; the missing package is still unverified.
-绕过,ee.nekoko.nlpa.flavor1,9eSIM
-绕过,com.google.android.projection.gearhead,Android Auto
-绕过,com.google.android.webview,Android System WebView
-绕过,com.google.android.marvin.talkback,Android 无障碍套件
-绕过,com.apple.android.music,Apple Music
-绕过,com.azure.authenticator,Authenticator
-绕过,com.google.android.configupdater,ConfigUpdater
-绕过,com.follow.clash,FIClash
-绕过,com.samsung.accessory.jellymgr,Galaxy Buds3
-绕过,com.google.android.googlequicksearchbox,Google
-绕过,com.android.vending,Google Play 商店
-绕过,com.google.android.gms,Google Play 服务
-绕过,com.google.android.syncadapters.calendar,Google 日历同步
-绕过,com.google.android.gsf,Google 服务框架
-绕过,com.facebook.aura,Muse
-绕过,com.okta.android.auth,Okta Verify
-绕过,com.microsoft.office.outlook,Outlook
-绕过,com.paypal.android.p2pmobile,PayPal
-绕过,com.picacg.picacomic,PicACG
-绕过,com.google.android.printservice.recommendation,Print Service Recommendation Service
-绕过,com.reddit.frontpage,Reddit
-绕过,com.moneybookers.skrillpayments,Skrill
-绕过,com.Slack,Slack
-绕过,com.twitter.android,X
-绕过,com.hush.yamby,Yamby
-绕过,us.zoom.videomeetings,Zoom
-绕过,com.kddi.kdla.jp,povo2.0
-绕过,com.samsung.android.app.watchmanager,三星智能穿戴
+国外,ee.nekoko.nlpa.flavor1,9eSIM
+国外,com.google.android.projection.gearhead,Android Auto
+国外,com.google.android.webview,Android System WebView
+国外,com.google.android.marvin.talkback,Android 无障碍套件
+国外,com.apple.android.music,Apple Music
+国外,com.azure.authenticator,Authenticator
+国外,com.google.android.configupdater,ConfigUpdater
+国外,com.samsung.accessory.jellymgr,Galaxy Buds3
+国外,com.google.android.googlequicksearchbox,Google
+国外,com.android.vending,Google Play 商店
+国外,com.google.android.gms,Google Play 服务
+国外,com.google.android.syncadapters.calendar,Google 日历同步
+国外,com.google.android.gsf,Google 服务框架
+国外,com.facebook.aura,Muse
+国外,com.okta.android.auth,Okta Verify
+国外,com.microsoft.office.outlook,Outlook
+国外,com.paypal.android.p2pmobile,PayPal
+国外,com.picacg.picacomic,PicACG
+国外,com.google.android.printservice.recommendation,Print Service Recommendation Service
+国外,com.reddit.frontpage,Reddit
+国外,com.moneybookers.skrillpayments,Skrill
+国外,com.Slack,Slack
+国外,com.twitter.android,X
+国外,com.hush.yamby,Yamby
+国外,us.zoom.videomeetings,Zoom
+国外,com.kddi.kdla.jp,povo2.0
+国外,com.samsung.android.app.watchmanager,三星智能穿戴

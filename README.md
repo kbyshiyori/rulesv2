@@ -4,8 +4,9 @@ Version-controlled build pipeline for personal proxy rule configs. Takes a maint
 upstream ruleset, layers local overrides (回国 domain routing, DNS), and publishes a
 ready-to-subscribe routing profile per client.
 
-- **Today:** Shadowrocket, Clash/Hako (macOS/iOS), Clash Verge Rev (Windows), and FlClash
-  (Android), each with 回国 (`backcn`) and 出国 (`cnip`) profiles.
+- **Today:** Shadowrocket, Clash/Hako (macOS/iOS), and Clash Verge Rev (Windows), each with
+  回国 (`backcn`) and 出国 (`cnip`) profiles; FlClash (Android) is **one** profile whose
+  `国外` / `兜底` groups you switch by location.
 - **Planned:** sing-box config for other Android clients (same `rules/` intent, different emitter).
 
 > This repo is worked on mainly by coding agents (Claude / Codex); the owner mainly
@@ -53,11 +54,11 @@ the same file name while using different WireGuard client keys and addresses.
 - **原神 routes by app/process, not by server IP.** Clash Verge Rev uses `YuanShen.exe` →
   `原神`. FlClash uses `com.miHoYo.Yuanshen` → `游戏`, with the other NekoBox Android app
   groups in [`rules/android-apps.list`](rules/android-apps.list).
-- **FlClash foreign matching uses ACL4SSR, not `geolocation-!cn`.** NekoBox's 国外url
-  rule was a negative geosite and leaked unmatched sites to the default China node.
-  FlClash consumes ACL4SSR `ProxyGFWlist` / `ProxyMedia` / `Telegram` as the known-foreign
-  lists and `ChinaDomain` / `ChinaIp` plus MetaCubeX CN MRS as the known-China lists, then
-  `MATCH,DIRECT` on `backcn`.
+- **FlClash is one profile, not backcn/cnip.** Groups: `北美`, `国外` (NekoBox 绕过 apps +
+  ACL4SSR GFW/media for the browser), `游戏` (原神 only), `18`, `missav`, `安全浏览`,
+  `兜底`. Abroad: set `国外=DIRECT`, `兜底`=China node. In CN: set `国外`=overseas node,
+  `兜底=DIRECT`. DNS follows the selected node (`redir-host` + `respect-rules`); no
+  NextDNS/AliDNS injection. `geolocation-!cn` is not used.
 - **China-domain list, inlined.** To make CN traffic route (and resolve) via the node
   instead of relying on `GEOIP,CN` — which forces a local/境外 DNS lookup and re-leaks CDN
   services — the builder inline-expands felixonmars `accelerated-domains.china.conf`
@@ -85,8 +86,8 @@ the same file name while using different WireGuard client keys and addresses.
 ```
 rules/redirect-to-cn.list      # client-agnostic: domains that must exit via the CN node
 rules/direct.list              # client-agnostic: optional local DIRECT exceptions
-rules/android-apps.list        # Android package -> 北美 / 游戏 / 绕过
-rules/policy-domains.list      # domain -> 北美 / 游戏 / DIRECT (from NekoBox)
+rules/android-apps.list        # Android package -> 北美 / 游戏 / 国外
+rules/policy-domains.list      # domain -> 18 / missav / 安全浏览
 docs/nekobox-route-snapshot.json # observed Android NekoBox rules; source for the lists above
 targets/shadowrocket/build.py  # emits the Shadowrocket sr-backcn.conf
 targets/clash/build.py         # emits Clash/Hako, Clash Verge Rev, and FlClash YAML profiles
@@ -123,18 +124,18 @@ python targets/clash/build.py --platform verge --profile backcn \
   --direct-rules rules/direct.list \
   --out dist/clash/clash-verge-backcn.yaml
 
-# FlClash Android: NekoBox app groups + ACL4SSR foreign/CN lists
-python targets/clash/build.py --platform flclash --profile backcn \
+# FlClash Android: one profile; switch 国外 / 兜底 by location
+python targets/clash/build.py --platform flclash \
   --rules rules/redirect-to-cn.list \
   --direct-rules rules/direct.list \
   --android-apps rules/android-apps.list \
   --policy-domains rules/policy-domains.list \
-  --out dist/clash/flclash-backcn.yaml
+  --out dist/clash/flclash.yaml
 ```
 
 ## Delivery
 
-CI builds on a daily cron (and on push) and publishes eight files to **GitHub Pages**:
+CI builds on a daily cron (and on push) and publishes seven files to **GitHub Pages**:
 
 - `https://kbyshiyori.github.io/rulesv2/sr-backcn.conf`
 - `https://kbyshiyori.github.io/rulesv2/sr-cnip.conf`
@@ -142,8 +143,7 @@ CI builds on a daily cron (and on push) and publishes eight files to **GitHub Pa
 - `https://kbyshiyori.github.io/rulesv2/clash-cnip.yaml`
 - `https://kbyshiyori.github.io/rulesv2/clash-verge-backcn.yaml`
 - `https://kbyshiyori.github.io/rulesv2/clash-verge-cnip.yaml`
-- `https://kbyshiyori.github.io/rulesv2/flclash-backcn.yaml`
-- `https://kbyshiyori.github.io/rulesv2/flclash-cnip.yaml`
+- `https://kbyshiyori.github.io/rulesv2/flclash.yaml`
 
 Subscribe the matching client to its URL. For Clash, import a device-specific
 `private-provider.yaml` under the profile's **Proxy Sources**; keep that file private.

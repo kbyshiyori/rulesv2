@@ -27,8 +27,9 @@ ACL4SSR_BASE = "https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash"
 PRIVATE_PROVIDER_PATH = "./providers/private-provider.yaml"
 CN_DNS = "https://223.5.5.5/dns-query"
 PLATFORMS = ("hako", "verge", "flclash")
-ANDROID_GROUPS = ("北美", "游戏", "绕过")
-POLICY_DOMAIN_TARGETS = ANDROID_GROUPS[:-1] + ("DIRECT", "PROXY", "REJECT", "YouTube")
+ANDROID_GROUPS = ("北美", "游戏", "国外")
+FLCLASH_SELECT_GROUPS = ("国外", "北美", "游戏", "18", "missav", "安全浏览")
+POLICY_DOMAIN_TARGETS = ANDROID_GROUPS + ("18", "missav", "安全浏览", "兜底", "DIRECT", "PROXY", "REJECT")
 ALWAYS_DIRECT_PACKAGES = frozenset({"com.follow.clash"})
 
 ACL4SSR_PROVIDERS = (
@@ -98,7 +99,7 @@ def load_android_apps(path: str) -> dict[str, list[str]]:
         if len(fields) < 2 or fields[0] not in groups or "." not in fields[1]:
             raise SystemExit(f"error: invalid android app at {path}:{line_number}: {raw}")
         package = fields[1]
-        if package in seen:
+        if package in seen or package in ALWAYS_DIRECT_PACKAGES:
             continue
         seen.add(package)
         groups[fields[0]].append(package)
@@ -126,20 +127,29 @@ def quote(value: str) -> str:
     return '"' + value.replace("\\", "\\\\").replace('"', '\\"') + '"'
 
 
-def _select_group(name: str) -> list[str]:
-    return [
-        f"  - name: {quote(name) if any(ord(char) > 127 for char in name) else name}",
+def _yaml_name(name: str) -> str:
+    if not name or name[0].isdigit() or any(ord(char) > 127 for char in name):
+        return quote(name)
+    return name
+
+
+def _select_group(name: str, proxies: tuple[str, ...] = ("PROXY", "DIRECT")) -> list[str]:
+    lines = [
+        f"  - name: {_yaml_name(name)}",
         "    type: select",
         "    proxies:",
-        "      - PROXY",
-        "      - DIRECT",
+    ]
+    for proxy in proxies:
+        lines.append(f"      - {proxy}")
+    lines.extend([
         "    use:",
         "      - private-provider",
-    ]
+    ])
+    return lines
 
 
 def _rule_provider(name: str, behavior: str, fmt: str, url: str, path: str) -> list[str]:
-    lines = [
+    return [
         f"  {name}:",
         "    type: http",
         f"    behavior: {behavior}",
@@ -148,7 +158,57 @@ def _rule_provider(name: str, behavior: str, fmt: str, url: str, path: str) -> l
         f"    path: {path}",
         "    interval: 86400",
     ]
+
+
+def _hako_dns(domains: list[str], dns: str, profile: str) -> list[str]:
+    cn_dns_route = "PROXY" if profile == "backcn" else "DIRECT"
+    foreign_dns_route = "DIRECT" if profile == "backcn" else "PROXY"
+    foreign_dns = dns or "https://1.1.1.1/dns-query"
+    lines = [
+        "dns:",
+        "  enable: true",
+        "  ipv6: true",
+        "  enhanced-mode: fake-ip",
+        "  fake-ip-range: 198.18.0.1/16",
+        "  use-hosts: true",
+        "  fake-ip-filter:",
+        '    - "+.lan"',
+        '    - "+.local"',
+        "  default-nameserver:",
+        "    - system",
+        "  proxy-server-nameserver:",
+        "    - system",
+        "  nameserver:",
+        f"    - {quote(foreign_dns + '#' + foreign_dns_route)}",
+        "  nameserver-policy:",
+        f"    {quote('rule-set:youtube')}: {quote(foreign_dns + '#YouTube')}",
+        f"    {quote('rule-set:cn-domain')}: {quote(CN_DNS + '#' + cn_dns_route)}",
+    ]
+    for domain in domains:
+        lines.append(
+            f"    {quote('+.' + domain)}: "
+            f"{quote(CN_DNS + '#' + cn_dns_route)}"
+        )
     return lines
+
+
+def _flclash_dns() -> list[str]:
+    return [
+        "dns:",
+        "  enable: true",
+        "  ipv6: true",
+        "  enhanced-mode: redir-host",
+        "  respect-rules: true",
+        "  use-hosts: true",
+        "  default-nameserver:",
+        "    - system",
+        "  proxy-server-nameserver:",
+        "    - system",
+        "  direct-nameserver:",
+        "    - system",
+        "  nameserver:",
+        "    - system",
+    ]
 
 
 def render(
@@ -162,18 +222,27 @@ def render(
 ) -> str:
     if platform not in PLATFORMS:
         raise ValueError(f"unsupported platform: {platform}")
-    cn_policy = "PROXY" if profile == "backcn" else "DIRECT"
-    fallback = "DIRECT" if profile == "backcn" else "PROXY"
-    foreign_policy = fallback
-    cn_dns_route = "PROXY" if profile == "backcn" else "DIRECT"
-    foreign_dns_route = "DIRECT" if profile == "backcn" else "PROXY"
-    foreign_dns = dns or "https://1.1.1.1/dns-query"
     android_apps = android_apps or {name: [] for name in ANDROID_GROUPS}
     policy_domains = policy_domains or []
+    if platform == "flclash":
+        cn_policy = "兜底"
+        fallback = "兜底"
+        foreign_policy = "国外"
+        youtube_policy = "国外"
+        profile_label = "single FlClash profile; switch 国外/兜底 by location"
+    else:
+        cn_policy = "PROXY" if profile == "backcn" else "DIRECT"
+        fallback = "DIRECT" if profile == "backcn" else "PROXY"
+        foreign_policy = fallback
+        youtube_policy = "YouTube"
+        profile_label = (
+            "CN via proxy, overseas direct" if profile == "backcn"
+            else "CN direct, overseas via proxy"
+        )
 
     lines = [
         "# Generated by rulesv2. Install private-provider.yaml locally; never publish node credentials.",
-        f"# Profile: {profile} ({'CN via proxy, overseas direct' if profile == 'backcn' else 'CN direct, overseas via proxy'})",
+        f"# Profile: {profile_label}",
         "mode: rule",
         "log-level: warning",
         "ipv6: true",
@@ -198,31 +267,13 @@ def render(
     lines.extend([
         "profile:",
         "  store-selected: true",
-        "  store-fake-ip: true",
-        "dns:",
-        "  enable: true",
-        "  ipv6: true",
-        "  enhanced-mode: fake-ip",
-        "  fake-ip-range: 198.18.0.1/16",
-        "  use-hosts: true",
-        "  fake-ip-filter:",
-        '    - "+.lan"',
-        '    - "+.local"',
-        "  default-nameserver:",
-        "    - system",
-        "  proxy-server-nameserver:",
-        "    - system",
-        "  nameserver:",
-        f"    - {quote(foreign_dns + '#' + foreign_dns_route)}",
-        "  nameserver-policy:",
-        f"    {quote('rule-set:youtube')}: {quote(foreign_dns + '#YouTube')}",
-        f"    {quote('rule-set:cn-domain')}: {quote(CN_DNS + '#' + cn_dns_route)}",
     ])
-    for domain in domains:
-        lines.append(
-            f"    {quote('+.' + domain)}: "
-            f"{quote(CN_DNS + '#' + cn_dns_route)}"
-        )
+    if platform != "flclash":
+        lines.append("  store-fake-ip: true")
+    if platform == "flclash":
+        lines.extend(_flclash_dns())
+    else:
+        lines.extend(_hako_dns(domains, dns, profile))
 
     lines.extend([
         "proxy-providers:",
@@ -235,25 +286,29 @@ def render(
         "      interval: 600",
         "      lazy: true",
         "proxy-groups:",
-        "  - name: PROXY",
-        "    type: select",
-        "    proxies:",
-        "      - REJECT",
-        "    use:",
-        "      - private-provider",
-        "  - name: YouTube",
-        "    type: select",
-        "    proxies:",
-        "      - PROXY",
-        "      - DIRECT",
-        "    use:",
-        "      - private-provider",
     ])
-    if platform == "verge":
-        lines.extend(_select_group("原神"))
     if platform == "flclash":
-        lines.extend(_select_group("北美"))
-        lines.extend(_select_group("游戏"))
+        lines.extend(_select_group("兜底", ("DIRECT", "REJECT")))
+        for name in FLCLASH_SELECT_GROUPS:
+            lines.extend(_select_group(name, ("DIRECT", "兜底")))
+    else:
+        lines.extend([
+            "  - name: PROXY",
+            "    type: select",
+            "    proxies:",
+            "      - REJECT",
+            "    use:",
+            "      - private-provider",
+            "  - name: YouTube",
+            "    type: select",
+            "    proxies:",
+            "      - PROXY",
+            "      - DIRECT",
+            "    use:",
+            "      - private-provider",
+        ])
+        if platform == "verge":
+            lines.extend(_select_group("原神"))
     lines.extend([
         "rule-providers:",
         *_rule_provider("cn-domain", "domain", "mrs", CN_DOMAIN_URL, "./rules/cn-domain.mrs"),
@@ -278,19 +333,15 @@ def render(
             lines.append(f"  - PROCESS-NAME,{package},北美")
         for package in android_apps.get("游戏", []):
             lines.append(f"  - PROCESS-NAME,{package},游戏")
-        bypass_packages = list(android_apps.get("绕过", []))
-        if profile != "backcn":
-            bypass_packages = [pkg for pkg in bypass_packages if pkg in ALWAYS_DIRECT_PACKAGES]
+        for package in android_apps.get("国外", []):
+            lines.append(f"  - PROCESS-NAME,{package},国外")
         for package in ALWAYS_DIRECT_PACKAGES:
-            if package not in bypass_packages:
-                bypass_packages.append(package)
-        for package in bypass_packages:
             lines.append(f"  - PROCESS-NAME,{package},DIRECT")
         lines.extend(f"  - {rule}" for rule in policy_domains)
     lines.extend(f"  - {rule}" for rule in direct_rules)
     lines.extend(f"  - DOMAIN-SUFFIX,{domain},{cn_policy}" for domain in domains)
     lines.extend([
-        "  - RULE-SET,youtube,YouTube",
+        f"  - RULE-SET,youtube,{youtube_policy}",
         "  - RULE-SET,ads,REJECT",
     ])
     if platform == "flclash":
@@ -302,18 +353,14 @@ def render(
             f"  - RULE-SET,acl-gfw,{foreign_policy}",
             f"  - RULE-SET,acl-cn-domain,{cn_policy}",
         ])
-    lines.extend([
-        "  - RULE-SET,cn-domain," + cn_policy,
-    ])
+    lines.append(f"  - RULE-SET,cn-domain,{cn_policy}")
     if platform == "flclash":
         lines.extend([
             f"  - RULE-SET,acl-cn-company-ip,{cn_policy},no-resolve",
             f"  - RULE-SET,acl-cn-ip,{cn_policy},no-resolve",
             f"  - RULE-SET,acl-cn-ipv6,{cn_policy},no-resolve",
         ])
-    lines.extend([
-        "  - RULE-SET,cn-ip," + cn_policy + ",no-resolve",
-    ])
+    lines.append(f"  - RULE-SET,cn-ip,{cn_policy},no-resolve")
     if platform == "flclash":
         lines.append(f"  - GEOIP,CN,{cn_policy},no-resolve")
     lines.extend([
@@ -321,7 +368,7 @@ def render(
         "  - IP-CIDR,172.16.0.0/12,DIRECT,no-resolve",
         "  - IP-CIDR,192.168.0.0/16,DIRECT,no-resolve",
         "  - IP-CIDR6,fc00::/7,DIRECT,no-resolve",
-        "  - MATCH," + fallback,
+        f"  - MATCH,{fallback}",
         "",
     ])
     return "\n".join(lines)
@@ -329,7 +376,7 @@ def render(
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--profile", choices=["backcn", "cnip"], required=True)
+    parser.add_argument("--profile", choices=["backcn", "cnip"], default="")
     parser.add_argument("--platform", choices=list(PLATFORMS), default="hako")
     parser.add_argument("--rules", required=True, help="path to redirect-to-cn.list")
     parser.add_argument("--direct-rules", required=True, help="path to direct.list")
@@ -338,13 +385,16 @@ def main() -> int:
     parser.add_argument("--dns", default="", help="foreign DoH URL; defaults to Cloudflare")
     parser.add_argument("--out", required=True)
     args = parser.parse_args()
+    if args.platform != "flclash" and args.profile not in {"backcn", "cnip"}:
+        parser.error("--profile is required unless --platform flclash")
 
     domains = load_domains(args.rules)
     direct_rules = load_direct_rules(args.direct_rules)
     android_apps = load_android_apps(args.android_apps) if args.android_apps else None
     policy_domains = load_policy_domains(args.policy_domains) if args.policy_domains else None
+    profile = args.profile or "backcn"
     text = render(
-        args.profile,
+        profile,
         domains,
         direct_rules,
         args.dns,
@@ -356,8 +406,9 @@ def main() -> int:
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(text, encoding="utf-8")
     app_count = sum(len(packages) for packages in (android_apps or {}).values())
+    profile_label = "single" if args.platform == "flclash" else profile
     print(
-        f"built {out} | platform={args.platform} | profile={args.profile} | direct={len(direct_rules)} | "
+        f"built {out} | platform={args.platform} | profile={profile_label} | direct={len(direct_rules)} | "
         f"redirect-to-cn={len(domains)} | android-apps={app_count} | "
         f"policy-domains={len(policy_domains or [])} | dns={'custom' if args.dns else 'cloudflare'}"
     )

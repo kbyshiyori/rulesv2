@@ -87,26 +87,15 @@ jobs:
             --dns "$NEXTDNS_DOH_URL" \
             --out _site/clash-verge-cnip.yaml
 
-      - name: Build FlClash profiles
+      - name: Build FlClash profile
         run: |
           python targets/clash/build.py \
             --platform flclash \
-            --profile backcn \
             --rules rules/redirect-to-cn.list \
             --direct-rules rules/direct.list \
             --android-apps rules/android-apps.list \
             --policy-domains rules/policy-domains.list \
-            --dns "$NEXTDNS_DOH_URL" \
-            --out _site/flclash-backcn.yaml
-          python targets/clash/build.py \
-            --platform flclash \
-            --profile cnip \
-            --rules rules/redirect-to-cn.list \
-            --direct-rules rules/direct.list \
-            --android-apps rules/android-apps.list \
-            --policy-domains rules/policy-domains.list \
-            --dns "$NEXTDNS_DOH_URL" \
-            --out _site/flclash-cnip.yaml
+            --out _site/flclash.yaml
 
       - name: Test builders
         run: |
