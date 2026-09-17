@@ -11,7 +11,9 @@ The same builder and client-agnostic `rules/` lists produce each client's profil
 - `clash-verge-backcn.yaml` / `clash-verge-cnip.yaml`: the corresponding Windows
   profiles, with an additional `YuanShen.exe` process rule.
 - `flclash.yaml`: one Android FlClash profile. Switch `🎯 全球直连` and `🐟 漏网之鱼` by location;
-  NekoBox app groups plus ACL4SSR foreign/CN lists. DNS follows the selected node.
+  NekoBox app groups plus ACL4SSR foreign/CN lists. DNS uses AliDNS on the CN side and
+  `--dns` / Cloudflare on the foreign side, each dialed through the same group as the
+  connection (`redir-host` + `respect-rules`).
 
 The Hako/Verge profiles use MetaCubeX `cn.mrs`, `cn-ip.mrs`, `youtube.mrs`, and
 `category-ads-all.mrs` rule
@@ -78,8 +80,8 @@ subscription.
 | `🔞 18` | `18comic.vip`, `hanime1.me` | US/PayPal node |
 | `🎬 missav` | `missav.ai`, `missav.ws` | JP/game node |
 | `🛡️ 安全浏览` | `browsercrp.vivo.com.cn` | usually `DIRECT` |
-| `🎮 游戏` | 原神 (`com.miHoYo.Yuanshen`) only | JP/game node |
-| `🇨🇦 北美` | Chase, Citi, Discover, Experian, T-Life, U.S. Bank, YouTube **app** | CA/PayPal node |
+| `🎮 游戏` | 原神 (`com.miHoYo.Yuanshen`) **and** hoyoverse/mihoyo suffixes | JP/game node |
+| `🇨🇦 北美` | Chase, Citi, Discover, Experian, T-Life, U.S. Bank, YouTube **app**, plus those banks' suffixes | CA/PayPal node |
 | `🎯 全球直连` | the NekoBox 绕过 apps (minus YouTube/T-Life) **and** ACL4SSR `ProxyGFWlist` / `ProxyMedia` / `Telegram` for the browser | `DIRECT` when abroad; an overseas node when in CN |
 | `🐟 漏网之鱼` | CN lists, `redirect-to-cn`, `GEOIP,CN`, unmatched `MATCH` | China node when abroad; `DIRECT` when in CN |
 
@@ -88,9 +90,16 @@ Rules are emitted in that order, so domain groups win over app groups. YouTube *
 Apps are `PROCESS-NAME` so they do not depend on foreign IP; ACL4SSR lists are for the
 browser. `geolocation-!cn` is not used.
 
-DNS uses `redir-host` + `respect-rules` and `nameserver: system`. Queries follow the same
-group as the connection and use that node's DNS. `--dns` / NextDNS / AliDNS are not
-injected into the FlClash profile.
+DNS uses `redir-host` + `respect-rules`. The **resolver** is AliDNS
+(`https://223.5.5.5/dns-query`) for CN-side names (`🐟 漏网之鱼`, `🛡️ 安全浏览`, CN
+rule-sets, `redirect-to-cn`) and `--dns` (Cloudflare if unset) for foreign-side names
+(`🎯 全球直连`, `🔞 18`, `🎬 missav`, `🇨🇦 北美`, `🎮 游戏`, GFW/media/Telegram/YouTube).
+The **path to that resolver** follows the domain's group, so switching `🎯 全球直连` /
+`🐟 漏网之鱼` between `DIRECT` and a node also switches where the query egresses. Node
+hostnames still use `system`. Inner DNS has no `PROCESS-NAME`, so 北美/游戏 company
+suffixes live in `policy-domains.list`. YouTube **app** traffic stays `🇨🇦 北美`; YouTube
+**DNS** follows the youtube rule-set (`🎯 全球直连`) — both foreign. Do not set
+`direct-nameserver: system` or DIRECT groups would leak to the ISP resolver.
 
 Import `https://kbyshiyori.github.io/rulesv2/flclash.yaml`, **Rule** mode, enable process
 lookup (查找进程), install `private-provider.yaml` into `private-provider`. Access-control
@@ -122,6 +131,6 @@ python build.py --platform flclash \
   --out ../../dist/clash/flclash.yaml
 ```
 
-Pass `--dns "$NEXTDNS_DOH_URL"` for Hako/Verge to use the same foreign resolver as the
-Shadowrocket profiles. Without it, those builders use Cloudflare DoH. CN names use
-`https://223.5.5.5/dns-query`. FlClash ignores `--dns` and uses the selected node's DNS.
+Pass `--dns "$NEXTDNS_DOH_URL"` for Hako/Verge/FlClash to use the same foreign resolver as
+the Shadowrocket profiles. Without it, those builders use Cloudflare DoH. CN names use
+`https://223.5.5.5/dns-query`. FlClash dials each resolver through the matching group.

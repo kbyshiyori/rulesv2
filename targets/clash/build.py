@@ -26,6 +26,7 @@ YOUTUBE_URL = (
 ACL4SSR_BASE = "https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash"
 PRIVATE_PROVIDER_PATH = "./providers/private-provider.yaml"
 CN_DNS = "https://223.5.5.5/dns-query"
+FOREIGN_DNS_DEFAULT = "https://1.1.1.1/dns-query"
 PLATFORMS = ("hako", "verge", "flclash")
 GROUP_NA = "🇨🇦 北美"
 GROUP_GAME = "🎮 游戏"
@@ -38,6 +39,9 @@ ANDROID_GROUPS = (GROUP_NA, GROUP_GAME, GROUP_GLOBAL)
 FLCLASH_SELECT_GROUPS = (GROUP_18, GROUP_MISSAV, GROUP_SAFE, GROUP_GAME, GROUP_NA, GROUP_GLOBAL)
 POLICY_DOMAIN_TARGETS = ANDROID_GROUPS + (GROUP_18, GROUP_MISSAV, GROUP_SAFE, GROUP_FINAL, "DIRECT", "PROXY", "REJECT")
 ALWAYS_DIRECT_PACKAGES = frozenset({"com.follow.clash"})
+CN_SIDE_GROUPS = frozenset({GROUP_FINAL, GROUP_SAFE})
+FLCLASH_FOREIGN_RULE_SETS = ("youtube", "acl-telegram", "acl-proxy-media", "acl-gfw")
+FLCLASH_CN_RULE_SETS = ("acl-cn-domain", "cn-domain")
 
 ACL4SSR_PROVIDERS = (
     ("acl-lan", "classical", "yaml", f"{ACL4SSR_BASE}/Providers/LocalAreaNetwork.yaml"),
@@ -170,7 +174,7 @@ def _rule_provider(name: str, behavior: str, fmt: str, url: str, path: str) -> l
 def _hako_dns(domains: list[str], dns: str, profile: str) -> list[str]:
     cn_dns_route = "PROXY" if profile == "backcn" else "DIRECT"
     foreign_dns_route = "DIRECT" if profile == "backcn" else "PROXY"
-    foreign_dns = dns or "https://1.1.1.1/dns-query"
+    foreign_dns = dns or FOREIGN_DNS_DEFAULT
     lines = [
         "dns:",
         "  enable: true",
@@ -199,8 +203,17 @@ def _hako_dns(domains: list[str], dns: str, profile: str) -> list[str]:
     return lines
 
 
-def _flclash_dns() -> list[str]:
-    return [
+def _flclash_resolver(target: str, foreign_dns: str) -> str:
+    if target in CN_SIDE_GROUPS:
+        return CN_DNS
+    if target in {"DIRECT", "REJECT"}:
+        return "system"
+    return foreign_dns
+
+
+def _flclash_dns(domains: list[str], dns: str, policy_domains: list[str]) -> list[str]:
+    foreign_dns = dns or FOREIGN_DNS_DEFAULT
+    lines = [
         "dns:",
         "  enable: true",
         "  ipv6: true",
@@ -211,11 +224,30 @@ def _flclash_dns() -> list[str]:
         "    - system",
         "  proxy-server-nameserver:",
         "    - system",
-        "  direct-nameserver:",
-        "    - system",
         "  nameserver:",
-        "    - system",
+        f"    - {quote(CN_DNS)}",
+        "  nameserver-policy:",
+        f"    {quote('+.lan')}: system",
+        f"    {quote('+.local')}: system",
+        "    pikvm.kbyshiyori.com: system",
     ]
+    seen = {"+.lan", "+.local", "pikvm.kbyshiyori.com"}
+    for rule in policy_domains:
+        _kind, domain, target = rule.split(",", 2)
+        key = "+." + domain
+        if key not in seen:
+            seen.add(key)
+            lines.append(f"    {quote(key)}: {quote(_flclash_resolver(target, foreign_dns))}")
+    for domain in domains:
+        key = "+." + domain
+        if key not in seen:
+            seen.add(key)
+            lines.append(f"    {quote(key)}: {quote(CN_DNS)}")
+    for name in FLCLASH_FOREIGN_RULE_SETS:
+        lines.append(f"    {quote('rule-set:' + name)}: {quote(foreign_dns)}")
+    for name in FLCLASH_CN_RULE_SETS:
+        lines.append(f"    {quote('rule-set:' + name)}: {quote(CN_DNS)}")
+    return lines
 
 
 def render(
@@ -278,7 +310,7 @@ def render(
     if platform != "flclash":
         lines.append("  store-fake-ip: true")
     if platform == "flclash":
-        lines.extend(_flclash_dns())
+        lines.extend(_flclash_dns(domains, dns, policy_domains))
     else:
         lines.extend(_hako_dns(domains, dns, profile))
 

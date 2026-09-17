@@ -119,10 +119,25 @@ class BuildTests(unittest.TestCase):
         self.assertIn("find-process-mode: always", text)
         self.assertIn("enhanced-mode: redir-host", text)
         self.assertIn("respect-rules: true", text)
-        self.assertNotIn("nameserver-policy:", text)
-        self.assertNotIn("223.5.5.5", text)
-        self.assertNotIn("dns.example", text)
+        self.assertIn("nameserver-policy:", text)
+        self.assertIn('    - "https://223.5.5.5/dns-query"', text)
+        self.assertIn('    "+.xiaohongshu.com": "https://223.5.5.5/dns-query"', text)
+        self.assertIn('    "+.18comic.vip": "https://dns.example/dns-query"', text)
+        self.assertIn('    "+.missav.ai": "https://dns.example/dns-query"', text)
+        self.assertIn('    "+.browsercrp.vivo.com.cn": "https://223.5.5.5/dns-query"', text)
+        self.assertIn('    "+.chase.com": "https://dns.example/dns-query"', text)
+        self.assertIn('    "+.hoyoverse.com": "https://dns.example/dns-query"', text)
+        self.assertIn('    "rule-set:youtube": "https://dns.example/dns-query"', text)
+        self.assertIn('    "rule-set:acl-gfw": "https://dns.example/dns-query"', text)
+        self.assertIn('    "rule-set:acl-cn-domain": "https://223.5.5.5/dns-query"', text)
+        self.assertIn("proxy-server-nameserver:\n    - system", text)
+        self.assertNotIn("direct-nameserver:", text)
         self.assertNotIn("enhanced-mode: fake-ip", text)
+        default_dns = build.render(
+            "backcn", ["xiaohongshu.com"], [], "", "flclash", apps, policy_domains,
+        )
+        self.assertIn('    "rule-set:youtube": "https://1.1.1.1/dns-query"', default_dns)
+        self.assertNotIn("dns.example", default_dns)
         self.assertIn(f"PROCESS-NAME,com.chase.sig.android,{build.GROUP_NA}", text)
         self.assertIn(f"PROCESS-NAME,com.miHoYo.Yuanshen,{build.GROUP_GAME}", text)
         self.assertIn(f"PROCESS-NAME,com.google.android.youtube,{build.GROUP_NA}", text)
@@ -133,6 +148,8 @@ class BuildTests(unittest.TestCase):
         self.assertIn(f"DOMAIN-SUFFIX,18comic.vip,{build.GROUP_18}", text)
         self.assertIn(f"DOMAIN-SUFFIX,missav.ai,{build.GROUP_MISSAV}", text)
         self.assertIn(f"DOMAIN-SUFFIX,browsercrp.vivo.com.cn,{build.GROUP_SAFE}", text)
+        self.assertIn(f"DOMAIN-SUFFIX,chase.com,{build.GROUP_NA}", text)
+        self.assertIn(f"DOMAIN-SUFFIX,hoyoverse.com,{build.GROUP_GAME}", text)
         self.assertNotIn(f"DOMAIN-SUFFIX,18comic.vip,{build.GROUP_NA}", text)
         self.assertNotIn(f"DOMAIN-SUFFIX,missav.ai,{build.GROUP_GAME}", text)
         self.assertIn(f"  - name: \"{build.GROUP_FINAL}\"\n    type: select", text)
@@ -158,6 +175,14 @@ class BuildTests(unittest.TestCase):
         )
         self.assertLess(
             text.index(f"DOMAIN-SUFFIX,browsercrp.vivo.com.cn,{build.GROUP_SAFE}"),
+            text.index(f"DOMAIN-SUFFIX,hoyoverse.com,{build.GROUP_GAME}"),
+        )
+        self.assertLess(
+            text.index(f"DOMAIN-SUFFIX,hoyoverse.com,{build.GROUP_GAME}"),
+            text.index(f"DOMAIN-SUFFIX,chase.com,{build.GROUP_NA}"),
+        )
+        self.assertLess(
+            text.index(f"DOMAIN-SUFFIX,chase.com,{build.GROUP_NA}"),
             text.index(f"PROCESS-NAME,com.miHoYo.Yuanshen,{build.GROUP_GAME}"),
         )
         self.assertLess(

@@ -57,8 +57,9 @@ the same file name while using different WireGuard client keys and addresses.
 - **FlClash is one profile, not backcn/cnip.** Groups: `🇨🇦 北美`, `🎯 全球直连` (NekoBox 绕过 apps +
   ACL4SSR GFW/media for the browser), `🎮 游戏` (原神 only), `🔞 18`, `🎬 missav`, `🛡️ 安全浏览`,
   `🐟 漏网之鱼`. Abroad: set `🎯 全球直连=DIRECT`, `🐟 漏网之鱼`=China node. In CN: set `🎯 全球直连`=overseas node,
-  `🐟 漏网之鱼=DIRECT`. DNS follows the selected node (`redir-host` + `respect-rules`); no
-  NextDNS/AliDNS injection. `geolocation-!cn` is not used.
+  `🐟 漏网之鱼=DIRECT`. DNS is same-side: AliDNS via `🐟 漏网之鱼` / `🛡️ 安全浏览`, foreign
+  DoH (`--dns` / Cloudflare) via the other groups, `respect-rules` for the dial path.
+  `geolocation-!cn` is not used.
 - **China-domain list, inlined.** To make CN traffic route (and resolve) via the node
   instead of relying on `GEOIP,CN` — which forces a local/境外 DNS lookup and re-leaks CDN
   services — the builder inline-expands felixonmars `accelerated-domains.china.conf`
@@ -131,6 +132,7 @@ python targets/clash/build.py --platform flclash \
   --android-apps rules/android-apps.list \
   --policy-domains rules/policy-domains.list \
   --out dist/clash/flclash.yaml
+# add --dns "$NEXTDNS_DOH_URL" for the foreign-side DoH (else Cloudflare)
 ```
 
 ## Delivery

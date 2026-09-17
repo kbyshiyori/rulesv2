@@ -85,10 +85,13 @@ grep -n 'PROCESS-NAME,com.chase.sig.android,🇨🇦 北美' /tmp/flclash.yaml
 grep -n 'RULE-SET,acl-gfw,🎯 全球直连' /tmp/flclash.yaml
 grep -n 'MATCH,🐟 漏网之鱼' /tmp/flclash.yaml
 grep -n 'respect-rules: true' /tmp/flclash.yaml
+grep -n '223.5.5.5' /tmp/flclash.yaml
+grep -n 'rule-set:acl-gfw' /tmp/flclash.yaml
 ```
 
 For a DNS change also pass `--dns 'https://dns.nextdns.io/PLACEHOLDER'` and confirm the
-`dns-server` line under `[General]` is replaced (and only there).
+FlClash `nameserver-policy` foreign entries (and Hako/Verge / Shadowrocket `dns-server`)
+use that URL. Never commit a real NextDNS URL.
 
 ## Adding the sing-box (Android) target
 

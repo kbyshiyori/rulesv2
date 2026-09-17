@@ -6,9 +6,24 @@
 # Source: docs/nekobox-route-snapshot.json
 #   18 / missav stay as their own groups (do not merge into 北美 or 游戏).
 #   安全浏览 is vivo's browser CRP host.
+# 北美 / 游戏 suffixes also exist so inner DNS (no PROCESS-NAME) follows the same
+# group instead of MATCH → 漏网之鱼. YouTube stays app-only (browser uses the
+# youtube rule-set → 🎯 全球直连).
 
 domain-suffix,18comic.vip,🔞 18
 domain-suffix,hanime1.me,🔞 18
 domain-suffix,missav.ai,🎬 missav
 domain-suffix,missav.ws,🎬 missav
 domain-suffix,browsercrp.vivo.com.cn,🛡️ 安全浏览
+domain-suffix,mihoyo.com,🎮 游戏
+domain-suffix,mihayo.com,🎮 游戏
+domain-suffix,hoyoverse.com,🎮 游戏
+domain-suffix,yuanshen.com,🎮 游戏
+domain-suffix,genshinimpact.com,🎮 游戏
+domain-suffix,chase.com,🇨🇦 北美
+domain-suffix,citi.com,🇨🇦 北美
+domain-suffix,citibank.com,🇨🇦 北美
+domain-suffix,discover.com,🇨🇦 北美
+domain-suffix,experian.com,🇨🇦 北美
+domain-suffix,usbank.com,🇨🇦 北美
+domain-suffix,t-mobile.com,🇨🇦 北美
