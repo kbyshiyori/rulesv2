@@ -84,6 +84,7 @@ the same file name while using different WireGuard client keys and addresses.
 ```
 rules/redirect-to-cn.list      # client-agnostic: domains that must exit via the CN node
 rules/direct.list              # client-agnostic: exact IPs that must use local DIRECT
+docs/nekobox-route-snapshot.json # observed Android NekoBox rules; reference only
 targets/shadowrocket/build.py  # emits the Shadowrocket sr-backcn.conf
 targets/clash/build.py         # emits Clash/Hako and Clash Verge Rev YAML profiles
 targets/sing-box/              # planned Android emitter (stub)

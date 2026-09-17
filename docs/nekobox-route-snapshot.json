@@ -1,0 +1,114 @@
+{
+  "schema_version": 1,
+  "client": "NekoBox (Android)",
+  "observed_on": "2026-09-18",
+  "source": "vivo phone screen, NekoBox route page and app pickers",
+  "purpose": "Read-only snapshot for agents; not a build input or deployable config",
+  "notes": [
+    "Rules are listed in the order shown in NekoBox. China-specific and disabled blocking rules were omitted at the owner's request.",
+    "The owner renamed miss to missav and 域名规则 to 国外url in this reference file; these are not verified as names on the phone.",
+    "The 绕过app rule reports 31 apps, but only 30 checked apps were visible in the picker, including system apps. The remaining package is unverified.",
+    "T-Life and YouTube occur in both 北美app and 绕过app. 北美app appears earlier on the route page; verify NekoBox's rule precedence before assuming either exit wins."
+  ],
+  "rules": [
+    {
+      "order": 4,
+      "name": "18",
+      "enabled": true,
+      "match": { "domains": ["18comic.vip", "hanime1.me"] },
+      "outbound": "Dmit-Beanfield-Paypal"
+    },
+    {
+      "order": 5,
+      "name": "missav",
+      "enabled": true,
+      "match": { "domains": ["missav.ai", "missav.ws"] },
+      "outbound": "JPTY1-Game"
+    },
+    {
+      "order": 6,
+      "name": "安全浏览",
+      "enabled": true,
+      "match": { "domains": ["browsercrp.vivo.com.cn"] },
+      "outbound": "绕过"
+    },
+    {
+      "order": 7,
+      "name": "北美app",
+      "enabled": true,
+      "match": {
+        "apps": [
+          { "name": "Chase", "package": "com.chase.sig.android" },
+          { "name": "Citi Mobile", "package": "com.citi.citimobile" },
+          { "name": "Discover", "package": "com.discoverfinancial.mobile" },
+          { "name": "Experian", "package": "com.experian.android" },
+          { "name": "T-Life", "package": "com.tmobile.tuesdays" },
+          { "name": "U.S. Bank", "package": "com.usbank.mobilebanking" },
+          { "name": "YouTube", "package": "com.google.android.youtube" }
+        ]
+      },
+      "outbound": "Dmit-Beanfield-Paypal"
+    },
+    {
+      "order": 8,
+      "name": "游戏",
+      "enabled": true,
+      "match": {
+        "apps": [
+          { "name": "原神", "package": "com.miHoYo.Yuanshen" }
+        ]
+      },
+      "outbound": "JPTY1-Game"
+    },
+    {
+      "order": 9,
+      "name": "绕过app",
+      "enabled": true,
+      "reported_app_count": 31,
+      "verified_app_count": 30,
+      "unverified_app_count": 1,
+      "match": {
+        "apps": [
+          { "name": "9eSIM", "package": "ee.nekoko.nlpa.flavor1" },
+          { "name": "Android Auto", "package": "com.google.android.projection.gearhead" },
+          { "name": "Android System WebView", "package": "com.google.android.webview" },
+          { "name": "Android 无障碍套件", "package": "com.google.android.marvin.talkback" },
+          { "name": "Apple Music", "package": "com.apple.android.music" },
+          { "name": "Authenticator", "package": "com.azure.authenticator" },
+          { "name": "ConfigUpdater", "package": "com.google.android.configupdater" },
+          { "name": "FIClash", "package": "com.follow.clash" },
+          { "name": "Galaxy Buds3", "package": "com.samsung.accessory.jellymgr" },
+          { "name": "Google", "package": "com.google.android.googlequicksearchbox" },
+          { "name": "Google Play 商店", "package": "com.android.vending" },
+          { "name": "Google Play 服务", "package": "com.google.android.gms" },
+          { "name": "Google 日历同步", "package": "com.google.android.syncadapters.calendar" },
+          { "name": "Google 服务框架", "package": "com.google.android.gsf" },
+          { "name": "Muse", "package": "com.facebook.aura" },
+          { "name": "Okta Verify", "package": "com.okta.android.auth" },
+          { "name": "Outlook", "package": "com.microsoft.office.outlook" },
+          { "name": "PayPal", "package": "com.paypal.android.p2pmobile" },
+          { "name": "PicACG", "package": "com.picacg.picacomic" },
+          { "name": "Print Service Recommendation Service", "package": "com.google.android.printservice.recommendation" },
+          { "name": "Reddit", "package": "com.reddit.frontpage" },
+          { "name": "Skrill", "package": "com.moneybookers.skrillpayments" },
+          { "name": "Slack", "package": "com.Slack" },
+          { "name": "T-Life", "package": "com.tmobile.tuesdays" },
+          { "name": "X", "package": "com.twitter.android" },
+          { "name": "Yamby", "package": "com.hush.yamby" },
+          { "name": "YouTube", "package": "com.google.android.youtube" },
+          { "name": "Zoom", "package": "us.zoom.videomeetings" },
+          { "name": "povo2.0", "package": "com.kddi.kdla.jp" },
+          { "name": "三星智能穿戴", "package": "com.samsung.android.app.watchmanager" }
+        ]
+      },
+      "outbound": "绕过"
+    },
+    {
+      "order": 10,
+      "name": "国外url",
+      "enabled": true,
+      "match": { "geosite": "geolocation-!cn" },
+      "outbound": "绕过"
+    }
+  ]
+}
