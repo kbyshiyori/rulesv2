@@ -220,6 +220,136 @@ class BuildTests(unittest.TestCase):
             text,
         )
 
+    def test_muse_rules_accept_domain_and_suffix(self) -> None:
+        with TemporaryDirectory() as directory:
+            path = Path(directory) / "muse.list"
+            path.write_text(
+                "domain-suffix,muse.ai\n"
+                "domain,auth.meta.com\n"
+                "# comment\n"
+                "domain,www.multimango.com\n",
+                encoding="utf-8",
+            )
+            self.assertEqual(
+                build.load_muse_rules(str(path)),
+                [
+                    f"DOMAIN-SUFFIX,muse.ai,{build.GROUP_MUSE}",
+                    f"DOMAIN,auth.meta.com,{build.GROUP_MUSE}",
+                    f"DOMAIN,www.multimango.com,{build.GROUP_MUSE}",
+                ],
+            )
+
+    def test_muse_is_a_five_group_universal_profile(self) -> None:
+        root = Path(__file__).resolve().parents[2]
+        muse_rules = build.load_muse_rules(str(root / "rules" / "muse.list"))
+        text = build.render(
+            "backcn", ["xiaohongshu.com"], [],
+            "https://dns.example/dns-query", "muse", None, None, muse_rules,
+        )
+        same_if_cnip = build.render(
+            "cnip", ["xiaohongshu.com"], [],
+            "https://dns.example/dns-query", "muse", None, None, muse_rules,
+        )
+        self.assertEqual(text, same_if_cnip)
+        self.assertIn("enhanced-mode: redir-host", text)
+        self.assertIn("respect-rules: true", text)
+        self.assertNotIn("find-process-mode:", text)
+        self.assertNotIn("PROCESS-NAME,", text)
+        self.assertNotIn("store-fake-ip:", text)
+        self.assertNotIn("  - name: PROXY\n", text)
+        self.assertNotIn("  - name: YouTube\n", text)
+        self.assertNotIn(f"  - name: \"{build.GROUP_18}\"", text)
+        self.assertNotIn(f"  - name: \"{build.GROUP_NA}\"", text)
+        self.assertNotIn(f"  - name: \"{build.GROUP_GAME}\"", text)
+        group_block = text.split("proxy-groups:\n", 1)[1].split("rule-providers:", 1)[0]
+        self.assertEqual(group_block.count("  - name:"), len(build.MUSE_SELECT_GROUPS) + 1)
+
+        def group_pos(name: str) -> int:
+            return group_block.index(f"  - name: \"{name}\"")
+
+        self.assertLess(group_pos(build.GROUP_YOUTUBE), group_pos(build.GROUP_MUSE))
+        self.assertLess(group_pos(build.GROUP_MUSE), group_pos(build.GROUP_GLOBAL))
+        self.assertLess(group_pos(build.GROUP_GLOBAL), group_pos(build.GROUP_CN))
+        self.assertLess(group_pos(build.GROUP_CN), group_pos(build.GROUP_FINAL))
+        youtube_group = text.split(f'  - name: "{build.GROUP_YOUTUBE}"\n', 1)[1].split(
+            "  - name:", 1
+        )[0]
+        muse_group = text.split(f'  - name: "{build.GROUP_MUSE}"\n', 1)[1].split(
+            "  - name:", 1
+        )[0]
+        self.assertIn(f'      - "{build.GROUP_GLOBAL}"', youtube_group)
+        self.assertIn(f'      - "{build.GROUP_GLOBAL}"', muse_group)
+        self.assertIn("    use:\n      - private-provider", muse_group)
+        self.assertIn(f"DOMAIN-SUFFIX,muse.ai,{build.GROUP_MUSE}", text)
+        self.assertIn(f"DOMAIN,auth.meta.com,{build.GROUP_MUSE}", text)
+        self.assertIn(f"DOMAIN,api.meta.ai,{build.GROUP_MUSE}", text)
+        self.assertIn(f"DOMAIN,hatch-api.meta.ai,{build.GROUP_MUSE}", text)
+        self.assertIn(f"DOMAIN,hatch.metaaivm.com,{build.GROUP_MUSE}", text)
+        self.assertIn(f"DOMAIN,www.multimango.com,{build.GROUP_MUSE}", text)
+        self.assertNotIn("graph.facebook.com", text)
+        self.assertNotIn("facebook.com", text)
+        self.assertIn(f"RULE-SET,youtube,{build.GROUP_YOUTUBE}", text)
+        self.assertIn(f"RULE-SET,acl-gfw,{build.GROUP_GLOBAL}", text)
+        self.assertIn(f"RULE-SET,acl-proxy-media,{build.GROUP_GLOBAL}", text)
+        self.assertIn(f"RULE-SET,acl-telegram,{build.GROUP_GLOBAL}", text)
+        self.assertIn(f"DOMAIN-SUFFIX,xiaohongshu.com,{build.GROUP_CN}", text)
+        self.assertIn(f"RULE-SET,acl-cn-domain,{build.GROUP_CN}", text)
+        self.assertIn(f"RULE-SET,cn-domain,{build.GROUP_CN}", text)
+        self.assertIn(f"GEOIP,CN,{build.GROUP_CN},no-resolve", text)
+        self.assertIn(f"MATCH,{build.GROUP_FINAL}", text)
+        self.assertEqual(build.GROUP_CN, "🇨🇳 中国代理")
+        self.assertEqual(build.HEALTH_CHECK_URL, "https://captive.apple.com")
+        self.assertIn(f'      url: "{build.HEALTH_CHECK_URL}"', text)
+        self.assertLess(
+            text.index(f"GEOIP,CN,{build.GROUP_CN},no-resolve"),
+            text.index(f"MATCH,{build.GROUP_FINAL}"),
+        )
+        self.assertLess(
+            text.index(f"DOMAIN-SUFFIX,muse.ai,{build.GROUP_MUSE}"),
+            text.index(f"RULE-SET,youtube,{build.GROUP_YOUTUBE}"),
+        )
+        self.assertLess(
+            text.index(f"RULE-SET,youtube,{build.GROUP_YOUTUBE}"),
+            text.index(f"RULE-SET,acl-gfw,{build.GROUP_GLOBAL}"),
+        )
+        self.assertLess(
+            text.index(f"RULE-SET,acl-gfw,{build.GROUP_GLOBAL}"),
+            text.index(f"GEOIP,CN,{build.GROUP_CN},no-resolve"),
+        )
+        self.assertIn('    "+.muse.ai": "https://dns.example/dns-query#🎨 Muse"', text)
+        self.assertIn('    "auth.meta.com": "https://dns.example/dns-query#🎨 Muse"', text)
+        self.assertNotIn("graph.facebook.com", text)
+        self.assertIn(
+            '    "+.xiaohongshu.com": "https://223.5.5.5/dns-query#🇨🇳 中国代理"',
+            text,
+        )
+        self.assertIn(
+            '    "rule-set:youtube": "https://dns.example/dns-query#📺 YouTube"',
+            text,
+        )
+        self.assertIn(
+            '    "rule-set:acl-gfw": "https://dns.example/dns-query#🎯 全球直连"',
+            text,
+        )
+        self.assertIn(
+            '    "rule-set:acl-cn-domain": "https://223.5.5.5/dns-query#🇨🇳 中国代理"',
+            text,
+        )
+        self.assertIn(
+            f'    - "https://223.5.5.5/dns-query#{build.GROUP_FINAL}"',
+            text,
+        )
+        self.assertNotIn('"https://dns.example/dns-query"', text)
+        self.assertNotIn('"https://223.5.5.5/dns-query"', text)
+        self.assertNotIn("geolocation-!cn", text)
+        self.assertNotIn("GEOIP,!CN", text)
+        self.assertNotIn("dns.nextdns.io", text)
+        self.assertIn(
+            f"{build.ACL4SSR_BASE}/Providers/ProxyGFWlist.yaml",
+            text,
+        )
+        self.assertNotIn("ACL4SSR", build.render("backcn", [], [], ""))
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -1,8 +1,8 @@
 # targets/clash
 
 Emits minimal mihomo YAML profiles for the native **Clash for Apple Platforms**
-(Hako) on iOS/macOS, **Clash Verge Rev** on Windows, and **FlClash** on Android.
-The same builder and client-agnostic `rules/` lists produce each client's profiles:
+(Hako) on iOS/macOS, **Clash Verge Rev** on Windows, **FlClash** on Android, and a
+simpler universal **Muse** profile for any mihomo client:
 
 - `clash-backcn.yaml`: mainland-China destinations use `PROXY`; everything else is
   `DIRECT`.
@@ -14,11 +14,15 @@ The same builder and client-agnostic `rules/` lists produce each client's profil
   NekoBox app groups plus ACL4SSR foreign/CN lists. DNS uses AliDNS on the CN side and
   `--dns` / Cloudflare on the foreign side, each dialed through the same group as the
   connection (`redir-host` + `respect-rules`).
+- `clash-backcn-muse.yaml`: one 5-group profile for both locations (no backcn/cnip split).
+  `📺 YouTube`, `🎨 Muse`, `🎯 全球直连` (ACL4SSR GFW/media/Telegram), `🇨🇳 中国代理`, and
+  `🐟 漏网之鱼`. Muse hosts come from `rules/muse.list`; other routing reuses `rules/` and
+  ACL4SSR. Same-side DNS as FlClash.
 
 The Hako/Verge profiles use MetaCubeX `cn.mrs`, `cn-ip.mrs`, `youtube.mrs`, and
 `category-ads-all.mrs` rule
 providers. MRS is intentional: large YAML/text rule sets can exceed the memory available
-to an iOS Network Extension. FlClash keeps those MRS sets and adds ACL4SSR classical
+to an iOS Network Extension. FlClash and Muse keep those MRS sets and add ACL4SSR classical
 providers (`ProxyGFWlist`, `ProxyMedia`, `Telegram`, `ChinaDomain`, `ChinaIp`).
 
 ## Private node setup
@@ -105,6 +109,34 @@ Import `https://kbyshiyori.github.io/rulesv2/flclash.yaml`, **Rule** mode, enabl
 lookup (查找进程), install `private-provider.yaml` into `private-provider`. Access-control
 app lists are VPN membership only; they do not replace these `PROCESS-NAME` rules.
 
+## Clash Muse (5 groups)
+
+One published file, not backcn/cnip. Same location-switch idea as FlClash, without Android
+process groups or the extra 18 / missav / 北美 / 游戏 / 安全浏览 selectors. Group names
+follow ACL4SSR (emoji + label).
+
+| Group | What it matches | Typical pick |
+|-------|-----------------|--------------|
+| `📺 YouTube` | MetaCubeX `youtube` rule-set | inherit `🎯 全球直连`, or a dedicated node |
+| `🎨 Muse` | `rules/muse.list` (`muse.ai` + Meta AI hosts) | inherit `🎯 全球直连`, or a dedicated node |
+| `🎯 全球直连` | ACL4SSR `ProxyGFWlist` / `ProxyMedia` / `Telegram` (non-CN) | `DIRECT` when abroad; an overseas node when in CN |
+| `🇨🇳 中国代理` | `redirect-to-cn`, ACL4SSR China domain/IP, MetaCubeX `cn`, `GEOIP,CN` | China node when abroad; `DIRECT` when in CN |
+| `🐟 漏网之鱼` | `MATCH` fallback: anything that did not hit YouTube, Muse, ads, LAN, `🎯 全球直连`, or `🇨🇳 中国代理` | China node when abroad; `DIRECT` when in CN |
+
+YouTube and Muse default to `🎯 全球直连` so a location switch cascades; pick a node in
+those groups only when they need a different exit. Ads still `REJECT`. LAN / `direct.list`
+stay `DIRECT`. `geolocation-!cn` is not used.
+
+DNS uses `redir-host` + `respect-rules`, with each DoH URL bound to its routing group
+(`https://…#📺 YouTube`, `#🎨 Muse`, `#🎯 全球直连`, `#🇨🇳 中国代理`, default `#🐟 漏网之鱼`).
+AliDNS for CN-side names, `--dns` / Cloudflare for foreign-side names. A bare
+`https://1.1.1.1/dns-query` would itself match `MATCH,🐟 漏网之鱼`; in CN that group is
+`DIRECT`, so Cloudflare/NextDNS would be unreachable. Node hostnames still use `system`.
+Proxy-provider health checks use `https://captive.apple.com`.
+
+Import `https://kbyshiyori.github.io/rulesv2/clash-backcn-muse.yaml`, **Rule** mode, install
+`private-provider.yaml` into `private-provider`.
+
 ## Build
 
 ```sh
@@ -129,8 +161,14 @@ python build.py --platform flclash \
   --android-apps ../../rules/android-apps.list \
   --policy-domains ../../rules/policy-domains.list \
   --out ../../dist/clash/flclash.yaml
+
+python build.py --platform muse \
+  --rules ../../rules/redirect-to-cn.list \
+  --direct-rules ../../rules/direct.list \
+  --muse-rules ../../rules/muse.list \
+  --out ../../dist/clash/clash-backcn-muse.yaml
 ```
 
-Pass `--dns "$NEXTDNS_DOH_URL"` for Hako/Verge/FlClash to use the same foreign resolver as
+Pass `--dns "$NEXTDNS_DOH_URL"` for Hako/Verge/FlClash/Muse to use the same foreign resolver as
 the Shadowrocket profiles. Without it, those builders use Cloudflare DoH. CN names use
-`https://223.5.5.5/dns-query`. FlClash dials each resolver through the matching group.
+`https://223.5.5.5/dns-query`. FlClash and Muse dial each resolver through the matching group.

@@ -1,0 +1,13 @@
+# Destinations that must use the Muse select group (Meta / Muse.ai).
+#
+# Format:
+#   domain-suffix,<domain>
+#   domain,<hostname>
+# Clash Muse profile maps these to 🎨 Muse. Other clients ignore this file.
+
+domain-suffix,muse.ai
+domain,auth.meta.com
+domain,api.meta.ai
+domain,hatch-api.meta.ai
+domain,hatch.metaaivm.com
+domain,www.multimango.com
