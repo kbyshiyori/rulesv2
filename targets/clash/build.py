@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
-"""Build minimal mihomo profiles for Clash/Hako, Clash Verge Rev, FlClash, or Muse."""
+"""Build minimal mihomo profiles for Clash/Hako, Clash Verge Rev, FlClash, or Muse.
+
+Hako keeps backcn/cnip. Verge, FlClash, and Muse are each one location-switch profile.
+"""
 from __future__ import annotations
 
 import argparse
@@ -29,7 +32,7 @@ HEALTH_CHECK_URL = "https://captive.apple.com"
 CN_DNS = "https://223.5.5.5/dns-query"
 FOREIGN_DNS_DEFAULT = "https://1.1.1.1/dns-query"
 PLATFORMS = ("hako", "verge", "flclash", "muse")
-UNIVERSAL_PLATFORMS = ("flclash", "muse")
+UNIVERSAL_PLATFORMS = ("flclash", "muse", "verge")
 GROUP_NA = "🇨🇦 北美"
 GROUP_GAME = "🎮 游戏"
 GROUP_GLOBAL = "🎯 全球直连"
@@ -43,6 +46,7 @@ GROUP_CN = "🇨🇳 中国代理"
 ANDROID_GROUPS = (GROUP_NA, GROUP_GAME, GROUP_GLOBAL)
 FLCLASH_SELECT_GROUPS = (GROUP_18, GROUP_MISSAV, GROUP_SAFE, GROUP_GAME, GROUP_NA, GROUP_GLOBAL)
 MUSE_SELECT_GROUPS = (GROUP_YOUTUBE, GROUP_MUSE, GROUP_GLOBAL, GROUP_CN)
+VERGE_SELECT_GROUPS = (GROUP_YOUTUBE, GROUP_MUSE, GROUP_GAME, GROUP_GLOBAL, GROUP_CN)
 POLICY_DOMAIN_TARGETS = ANDROID_GROUPS + (GROUP_18, GROUP_MISSAV, GROUP_SAFE, GROUP_FINAL, "DIRECT", "PROXY", "REJECT")
 ALWAYS_DIRECT_PACKAGES = frozenset({"com.follow.clash"})
 CN_SIDE_GROUPS = frozenset({GROUP_FINAL, GROUP_SAFE, GROUP_CN})
@@ -138,6 +142,11 @@ def load_policy_domains(path: str) -> list[str]:
                     f"error: invalid policy domain at {path}:{line_number}: {raw}"
                 )
     return rules
+
+
+def game_domain_rules(policy_domains: list[str]) -> list[str]:
+    suffix = f",{GROUP_GAME}"
+    return [rule for rule in policy_domains if rule.endswith(suffix)]
 
 
 def load_muse_rules(path: str) -> list[str]:
@@ -287,12 +296,18 @@ def _flclash_dns(domains: list[str], dns: str, policy_domains: list[str]) -> lis
     return lines
 
 
-def _muse_dns(domains: list[str], dns: str, muse_rules: list[str]) -> list[str]:
+def _muse_dns(
+    domains: list[str],
+    dns: str,
+    muse_rules: list[str],
+    extra_rules: list[str] | None = None,
+) -> list[str]:
     # Bind each DoH URL to the routing group. With respect-rules, a bare
     # https://1.1.1.1/dns-query is itself a connection to 1.1.1.1 and falls
     # through to MATCH / 🐟 漏网之鱼. In CN that group is DIRECT, so Cloudflare
     # (and NextDNS) never get reached.
     foreign_dns = dns or FOREIGN_DNS_DEFAULT
+    extra_rules = extra_rules or []
     lines = [
         "dns:",
         "  enable: true",
@@ -312,7 +327,7 @@ def _muse_dns(domains: list[str], dns: str, muse_rules: list[str]) -> list[str]:
         "    pikvm.kbyshiyori.com: system",
     ]
     seen = {"+.lan", "+.local", "pikvm.kbyshiyori.com"}
-    for rule in muse_rules:
+    for rule in (*muse_rules, *extra_rules):
         kind, domain, target = rule.split(",", 2)
         key = domain if kind == "DOMAIN" else "+." + domain
         if key not in seen:
@@ -358,13 +373,14 @@ def render(
         foreign_policy = GROUP_GLOBAL
         youtube_policy = GROUP_GLOBAL
         profile_label = "single FlClash profile; switch 🎯 全球直连 / 🐟 漏网之鱼 by location"
-    elif platform == "muse":
+    elif platform in {"muse", "verge"}:
         cn_policy = GROUP_CN
         fallback = GROUP_FINAL
         foreign_policy = GROUP_GLOBAL
         youtube_policy = GROUP_YOUTUBE
+        client = "Clash Verge Rev" if platform == "verge" else "Clash"
         profile_label = (
-            "single Clash profile; switch 🎯 全球直连 / 🇨🇳 中国代理 / 🐟 漏网之鱼 by location"
+            f"single {client} profile; switch 🎯 全球直连 / 🇨🇳 中国代理 / 🐟 漏网之鱼 by location"
         )
     else:
         cn_policy = "PROXY" if profile == "backcn" else "DIRECT"
@@ -408,8 +424,9 @@ def render(
         lines.append("  store-fake-ip: true")
     if platform == "flclash":
         lines.extend(_flclash_dns(domains, dns, policy_domains))
-    elif platform == "muse":
-        lines.extend(_muse_dns(domains, dns, muse_rules))
+    elif platform in {"muse", "verge"}:
+        extra_dns_rules = game_domain_rules(policy_domains) if platform == "verge" else []
+        lines.extend(_muse_dns(domains, dns, muse_rules, extra_dns_rules))
     else:
         lines.extend(_hako_dns(domains, dns, profile))
 
@@ -430,9 +447,11 @@ def render(
         for name in FLCLASH_SELECT_GROUPS:
             lines.extend(_select_group(name, ("DIRECT", GROUP_FINAL)))
         lines.extend(_select_group(GROUP_FINAL, ("DIRECT", "REJECT")))
-    elif platform == "muse":
+    elif platform in {"muse", "verge"}:
         lines.extend(_select_group(GROUP_YOUTUBE, (GROUP_GLOBAL, "DIRECT", GROUP_FINAL)))
         lines.extend(_select_group(GROUP_MUSE, (GROUP_GLOBAL, "DIRECT", GROUP_FINAL)))
+        if platform == "verge":
+            lines.extend(_select_group(GROUP_GAME, ("DIRECT", GROUP_FINAL)))
         lines.extend(_select_group(GROUP_GLOBAL, ("DIRECT", GROUP_FINAL)))
         lines.extend(_select_group(GROUP_CN, ("DIRECT", GROUP_FINAL)))
         lines.extend(_select_group(GROUP_FINAL, ("DIRECT", "REJECT")))
@@ -452,8 +471,6 @@ def render(
             "    use:",
             "      - private-provider",
         ])
-        if platform == "verge":
-            lines.extend(_select_group("原神"))
     lines.extend([
         "rule-providers:",
         *_rule_provider("cn-domain", "domain", "mrs", CN_DOMAIN_URL, "./rules/cn-domain.mrs"),
@@ -471,8 +488,6 @@ def render(
         "rules:",
         "  - DOMAIN,pikvm.kbyshiyori.com,DIRECT",
     ])
-    if platform == "verge":
-        lines.append("  - PROCESS-NAME,YuanShen.exe,原神")
     if platform == "flclash":
         lines.extend(f"  - {rule}" for rule in policy_domains)
         for package in android_apps.get(GROUP_GAME, []):
@@ -483,8 +498,11 @@ def render(
             lines.append(f"  - PROCESS-NAME,{package},{GROUP_GLOBAL}")
         for package in ALWAYS_DIRECT_PACKAGES:
             lines.append(f"  - PROCESS-NAME,{package},DIRECT")
-    if platform == "muse":
+    if platform in {"muse", "verge"}:
         lines.extend(f"  - {rule}" for rule in muse_rules)
+    if platform == "verge":
+        lines.extend(f"  - {rule}" for rule in game_domain_rules(policy_domains))
+        lines.append(f"  - PROCESS-NAME,YuanShen.exe,{GROUP_GAME}")
     lines.extend(f"  - {rule}" for rule in direct_rules)
     lines.extend(f"  - DOMAIN-SUFFIX,{domain},{cn_policy}" for domain in domains)
     lines.extend([
@@ -534,7 +552,7 @@ def main() -> int:
     parser.add_argument("--out", required=True)
     args = parser.parse_args()
     if args.platform not in UNIVERSAL_PLATFORMS and args.profile not in {"backcn", "cnip"}:
-        parser.error("--profile is required unless --platform flclash or muse")
+        parser.error("--profile is required unless --platform flclash, muse, or verge")
 
     domains = load_domains(args.rules)
     direct_rules = load_direct_rules(args.direct_rules)

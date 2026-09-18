@@ -1,4 +1,5 @@
 # Destination rules that share an FlClash policy group, independent of GEOIP.
+# Clash Verge Rev reuses only the 🎮 游戏 suffixes (hoyoverse/mihoyo/原神).
 #
 # Format: domain-suffix,<domain>,<group>
 # Groups: 🇨🇦 北美 | 🎮 游戏 | 🎯 全球直连 | 🔞 18 | 🎬 missav | 🛡️ 安全浏览 | 🐟 漏网之鱼
