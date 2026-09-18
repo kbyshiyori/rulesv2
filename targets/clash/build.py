@@ -234,6 +234,10 @@ def _flclash_resolver(target: str, foreign_dns: str) -> str:
     return foreign_dns
 
 
+def _bound_resolver(url: str, group: str) -> str:
+    return quote(f"{url}#{group}")
+
+
 def _flclash_dns(domains: list[str], dns: str, policy_domains: list[str]) -> list[str]:
     foreign_dns = dns or FOREIGN_DNS_DEFAULT
     lines = [
@@ -270,6 +274,56 @@ def _flclash_dns(domains: list[str], dns: str, policy_domains: list[str]) -> lis
         lines.append(f"    {quote('rule-set:' + name)}: {quote(foreign_dns)}")
     for name in FLCLASH_CN_RULE_SETS:
         lines.append(f"    {quote('rule-set:' + name)}: {quote(CN_DNS)}")
+    return lines
+
+
+def _muse_dns(domains: list[str], dns: str, muse_rules: list[str]) -> list[str]:
+    # Bind each DoH URL to the routing group. With respect-rules, a bare
+    # https://1.1.1.1/dns-query is itself a connection to 1.1.1.1 and falls
+    # through to MATCH / 🐟 漏网之鱼. In CN that group is DIRECT, so Cloudflare
+    # (and NextDNS) never get reached.
+    foreign_dns = dns or FOREIGN_DNS_DEFAULT
+    lines = [
+        "dns:",
+        "  enable: true",
+        "  ipv6: true",
+        "  enhanced-mode: redir-host",
+        "  respect-rules: true",
+        "  use-hosts: true",
+        "  default-nameserver:",
+        "    - system",
+        "  proxy-server-nameserver:",
+        "    - system",
+        "  nameserver:",
+        f"    - {_bound_resolver(CN_DNS, GROUP_FINAL)}",
+        "  nameserver-policy:",
+        f"    {quote('+.lan')}: system",
+        f"    {quote('+.local')}: system",
+        "    pikvm.kbyshiyori.com: system",
+    ]
+    seen = {"+.lan", "+.local", "pikvm.kbyshiyori.com"}
+    for rule in muse_rules:
+        kind, domain, target = rule.split(",", 2)
+        key = domain if kind == "DOMAIN" else "+." + domain
+        if key not in seen:
+            seen.add(key)
+            lines.append(f"    {quote(key)}: {_bound_resolver(foreign_dns, target)}")
+    for domain in domains:
+        key = "+." + domain
+        if key not in seen:
+            seen.add(key)
+            lines.append(f"    {quote(key)}: {_bound_resolver(CN_DNS, GROUP_CN)}")
+    lines.append(
+        f"    {quote('rule-set:youtube')}: {_bound_resolver(foreign_dns, GROUP_YOUTUBE)}"
+    )
+    for name in ("acl-telegram", "acl-proxy-media", "acl-gfw"):
+        lines.append(
+            f"    {quote('rule-set:' + name)}: {_bound_resolver(foreign_dns, GROUP_GLOBAL)}"
+        )
+    for name in FLCLASH_CN_RULE_SETS:
+        lines.append(
+            f"    {quote('rule-set:' + name)}: {_bound_resolver(CN_DNS, GROUP_CN)}"
+        )
     return lines
 
 
@@ -345,7 +399,7 @@ def render(
     if platform == "flclash":
         lines.extend(_flclash_dns(domains, dns, policy_domains))
     elif platform == "muse":
-        lines.extend(_flclash_dns(domains, dns, muse_rules))
+        lines.extend(_muse_dns(domains, dns, muse_rules))
     else:
         lines.extend(_hako_dns(domains, dns, profile))
 

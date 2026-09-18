@@ -316,13 +316,31 @@ class BuildTests(unittest.TestCase):
             text.index(f"RULE-SET,acl-gfw,{build.GROUP_GLOBAL}"),
             text.index(f"GEOIP,CN,{build.GROUP_CN},no-resolve"),
         )
-        self.assertIn('    "+.muse.ai": "https://dns.example/dns-query"', text)
-        self.assertIn('    "auth.meta.com": "https://dns.example/dns-query"', text)
+        self.assertIn('    "+.muse.ai": "https://dns.example/dns-query#🎨 Muse"', text)
+        self.assertIn('    "auth.meta.com": "https://dns.example/dns-query#🎨 Muse"', text)
         self.assertNotIn("graph.facebook.com", text)
-        self.assertIn('    "+.xiaohongshu.com": "https://223.5.5.5/dns-query"', text)
-        self.assertIn('    "rule-set:youtube": "https://dns.example/dns-query"', text)
-        self.assertIn('    "rule-set:acl-gfw": "https://dns.example/dns-query"', text)
-        self.assertIn('    "rule-set:acl-cn-domain": "https://223.5.5.5/dns-query"', text)
+        self.assertIn(
+            '    "+.xiaohongshu.com": "https://223.5.5.5/dns-query#🇨🇳 中国代理"',
+            text,
+        )
+        self.assertIn(
+            '    "rule-set:youtube": "https://dns.example/dns-query#📺 YouTube"',
+            text,
+        )
+        self.assertIn(
+            '    "rule-set:acl-gfw": "https://dns.example/dns-query#🎯 全球直连"',
+            text,
+        )
+        self.assertIn(
+            '    "rule-set:acl-cn-domain": "https://223.5.5.5/dns-query#🇨🇳 中国代理"',
+            text,
+        )
+        self.assertIn(
+            f'    - "https://223.5.5.5/dns-query#{build.GROUP_FINAL}"',
+            text,
+        )
+        self.assertNotIn('"https://dns.example/dns-query"', text)
+        self.assertNotIn('"https://223.5.5.5/dns-query"', text)
         self.assertNotIn("geolocation-!cn", text)
         self.assertNotIn("GEOIP,!CN", text)
         self.assertNotIn("dns.nextdns.io", text)

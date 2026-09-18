@@ -68,7 +68,8 @@ the same file name while using different WireGuard client keys and addresses.
   `🇨🇳 中国代理` (`redirect-to-cn` + CN lists + `GEOIP,CN`), `🐟 漏网之鱼` (`MATCH` fallback). Abroad:
   `🎯 全球直连=DIRECT`, `🇨🇳 中国代理` / `🐟 漏网之鱼`=China node. In CN: `🎯 全球直连`=overseas node,
   `🇨🇳 中国代理` / `🐟 漏网之鱼=DIRECT`. YouTube and Muse default to `🎯 全球直连`. DNS is the
-  FlClash same-side split (`redir-host` + `respect-rules`).
+  FlClash same-side split (`redir-host` + `respect-rules`) with each DoH URL bound to the
+  matching group (`#📺 YouTube` / `#🎨 Muse` / `#🎯 全球直连` / `#🇨🇳 中国代理` / `#🐟 漏网之鱼`).
 - **China-domain list, inlined.** To make CN traffic route (and resolve) via the node
   instead of relying on `GEOIP,CN` — which forces a local/境外 DNS lookup and re-leaks CDN
   services — the builder inline-expands felixonmars `accelerated-domains.china.conf`

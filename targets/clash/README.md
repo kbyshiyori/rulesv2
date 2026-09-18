@@ -127,9 +127,11 @@ YouTube and Muse default to `🎯 全球直连` so a location switch cascades; p
 those groups only when they need a different exit. Ads still `REJECT`. LAN / `direct.list`
 stay `DIRECT`. `geolocation-!cn` is not used.
 
-DNS matches FlClash: `redir-host` + `respect-rules`, AliDNS for CN-side names (`🇨🇳 中国代理`,
-CN rule-sets, `redirect-to-cn`) and `--dns` / Cloudflare for foreign-side names (`📺 YouTube`,
-`🎨 Muse`, `🎯 全球直连`, GFW/media/Telegram/YouTube). Node hostnames still use `system`.
+DNS uses `redir-host` + `respect-rules`, with each DoH URL bound to its routing group
+(`https://…#📺 YouTube`, `#🎨 Muse`, `#🎯 全球直连`, `#🇨🇳 中国代理`, default `#🐟 漏网之鱼`).
+AliDNS for CN-side names, `--dns` / Cloudflare for foreign-side names. A bare
+`https://1.1.1.1/dns-query` would itself match `MATCH,🐟 漏网之鱼`; in CN that group is
+`DIRECT`, so Cloudflare/NextDNS would be unreachable. Node hostnames still use `system`.
 Proxy-provider health checks use `https://captive.apple.com`.
 
 Import `https://kbyshiyori.github.io/rulesv2/clash-backcn-muse.yaml`, **Rule** mode, install
