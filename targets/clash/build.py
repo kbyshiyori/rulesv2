@@ -227,11 +227,11 @@ def _hako_dns(domains: list[str], dns: str, profile: str) -> list[str]:
 
 
 def _flclash_resolver(target: str, foreign_dns: str) -> str:
-    if target in CN_SIDE_GROUPS:
-        return CN_DNS
     if target in {"DIRECT", "REJECT"}:
         return "system"
-    return foreign_dns
+    if target in CN_SIDE_GROUPS:
+        return _bound_resolver(CN_DNS, target)
+    return _bound_resolver(foreign_dns, target)
 
 
 def _bound_resolver(url: str, group: str) -> str:
@@ -239,6 +239,12 @@ def _bound_resolver(url: str, group: str) -> str:
 
 
 def _flclash_dns(domains: list[str], dns: str, policy_domains: list[str]) -> list[str]:
+    # Bind each DoH URL to the routing group. With respect-rules, a bare
+    # https://1.1.1.1/dns-query is itself a connection to 1.1.1.1 and falls
+    # through to MATCH / 🐟 漏网之鱼. In CN that group is DIRECT, so Cloudflare
+    # (and NextDNS) time out — 🎮 游戏 domains then 500 even when that group
+    # is on a JP node. The #group suffix forces the resolver dial onto the
+    # same exit as the connection (e.g. NextDNS via 🎮 游戏).
     foreign_dns = dns or FOREIGN_DNS_DEFAULT
     lines = [
         "dns:",
@@ -252,7 +258,7 @@ def _flclash_dns(domains: list[str], dns: str, policy_domains: list[str]) -> lis
         "  proxy-server-nameserver:",
         "    - system",
         "  nameserver:",
-        f"    - {quote(CN_DNS)}",
+        f"    - {_bound_resolver(CN_DNS, GROUP_FINAL)}",
         "  nameserver-policy:",
         f"    {quote('+.lan')}: system",
         f"    {quote('+.local')}: system",
@@ -264,16 +270,20 @@ def _flclash_dns(domains: list[str], dns: str, policy_domains: list[str]) -> lis
         key = domain if kind == "DOMAIN" else "+." + domain
         if key not in seen:
             seen.add(key)
-            lines.append(f"    {quote(key)}: {quote(_flclash_resolver(target, foreign_dns))}")
+            lines.append(f"    {quote(key)}: {_flclash_resolver(target, foreign_dns)}")
     for domain in domains:
         key = "+." + domain
         if key not in seen:
             seen.add(key)
-            lines.append(f"    {quote(key)}: {quote(CN_DNS)}")
+            lines.append(f"    {quote(key)}: {_bound_resolver(CN_DNS, GROUP_FINAL)}")
     for name in FLCLASH_FOREIGN_RULE_SETS:
-        lines.append(f"    {quote('rule-set:' + name)}: {quote(foreign_dns)}")
+        lines.append(
+            f"    {quote('rule-set:' + name)}: {_bound_resolver(foreign_dns, GROUP_GLOBAL)}"
+        )
     for name in FLCLASH_CN_RULE_SETS:
-        lines.append(f"    {quote('rule-set:' + name)}: {quote(CN_DNS)}")
+        lines.append(
+            f"    {quote('rule-set:' + name)}: {_bound_resolver(CN_DNS, GROUP_FINAL)}"
+        )
     return lines
 
 

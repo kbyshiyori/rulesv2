@@ -60,7 +60,8 @@ the same file name while using different WireGuard client keys and addresses.
   ACL4SSR GFW/media for the browser), `🎮 游戏` (原神 only), `🔞 18`, `🎬 missav`, `🛡️ 安全浏览`,
   `🐟 漏网之鱼`. Abroad: set `🎯 全球直连=DIRECT`, `🐟 漏网之鱼`=China node. In CN: set `🎯 全球直连`=overseas node,
   `🐟 漏网之鱼=DIRECT`. DNS is same-side: AliDNS via `🐟 漏网之鱼` / `🛡️ 安全浏览`, foreign
-  DoH (`--dns` / Cloudflare) via the other groups, `respect-rules` for the dial path.
+  DoH (`--dns` / Cloudflare) via the other groups, each URL bound with a `#分组` suffix
+  (`#🎮 游戏`, `#🎯 全球直连`, …) so `respect-rules` actually dials through that exit.
   `geolocation-!cn` is not used.
 - **Clash Muse is one 5-group profile, not backcn/cnip.** Same location switch as FlClash,
   without Android process groups. `📺 YouTube` (youtube rule-set), `🎨 Muse`

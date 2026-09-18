@@ -12,8 +12,8 @@ simpler universal **Muse** profile for any mihomo client:
   profiles, with an additional `YuanShen.exe` process rule.
 - `flclash.yaml`: one Android FlClash profile. Switch `🎯 全球直连` and `🐟 漏网之鱼` by location;
   NekoBox app groups plus ACL4SSR foreign/CN lists. DNS uses AliDNS on the CN side and
-  `--dns` / Cloudflare on the foreign side, each dialed through the same group as the
-  connection (`redir-host` + `respect-rules`).
+  `--dns` / Cloudflare on the foreign side, each DoH URL bound to the matching group
+  (`#🎮 游戏`, `#🎯 全球直连`, `#🐟 漏网之鱼`, …) with `redir-host` + `respect-rules`.
 - `clash-backcn-muse.yaml`: one 5-group profile for both locations (no backcn/cnip split).
   `📺 YouTube`, `🎨 Muse`, `🎯 全球直连` (ACL4SSR GFW/media/Telegram), `🇨🇳 中国代理`, and
   `🐟 漏网之鱼`. Muse hosts come from `rules/muse.list`; other routing reuses `rules/` and
@@ -94,16 +94,19 @@ Rules are emitted in that order, so domain groups win over app groups. YouTube *
 Apps are `PROCESS-NAME` so they do not depend on foreign IP; ACL4SSR lists are for the
 browser. `geolocation-!cn` is not used.
 
-DNS uses `redir-host` + `respect-rules`. The **resolver** is AliDNS
+DNS uses `redir-host` + `respect-rules`, with each DoH URL bound to its routing group
+(`https://…#🎮 游戏`, `#🇨🇦 北美`, `#🎯 全球直连`, `#🐟 漏网之鱼`, …). AliDNS
 (`https://223.5.5.5/dns-query`) for CN-side names (`🐟 漏网之鱼`, `🛡️ 安全浏览`, CN
 rule-sets, `redirect-to-cn`) and `--dns` (Cloudflare if unset) for foreign-side names
 (`🎯 全球直连`, `🔞 18`, `🎬 missav`, `🇨🇦 北美`, `🎮 游戏`, GFW/media/Telegram/YouTube).
-The **path to that resolver** follows the domain's group, so switching `🎯 全球直连` /
-`🐟 漏网之鱼` between `DIRECT` and a node also switches where the query egresses. Node
-hostnames still use `system`. Inner DNS has no `PROCESS-NAME`, so 北美/游戏 company
-suffixes live in `policy-domains.list`. YouTube **app** traffic stays `🇨🇦 北美`; YouTube
-**DNS** follows the youtube rule-set (`🎯 全球直连`) — both foreign. Do not set
-`direct-nameserver: system` or DIRECT groups would leak to the ISP resolver.
+A bare `https://1.1.1.1/dns-query` would itself match `MATCH,🐟 漏网之鱼`; in CN that
+group is `DIRECT`, so Cloudflare/NextDNS time out and 原神 login domains 500 even when
+`🎮 游戏` is on a JP node. The `#group` suffix forces the resolver dial onto the same
+exit as the connection. Node hostnames still use `system`. Inner DNS has no
+`PROCESS-NAME`, so 北美/游戏 company suffixes live in `policy-domains.list`. YouTube
+**app** traffic stays `🇨🇦 北美`; YouTube **DNS** follows the youtube rule-set
+(`🎯 全球直连`) — both foreign. Do not set `direct-nameserver: system` or DIRECT groups
+would leak to the ISP resolver.
 
 Import `https://kbyshiyori.github.io/rulesv2/flclash.yaml`, **Rule** mode, enable process
 lookup (查找进程), install `private-provider.yaml` into `private-provider`. Access-control
