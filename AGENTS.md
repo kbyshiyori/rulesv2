@@ -92,6 +92,7 @@ grep -n 'MATCH,🐟 漏网之鱼' /tmp/flclash.yaml
 grep -n 'respect-rules: true' /tmp/flclash.yaml
 grep -n '223.5.5.5' /tmp/flclash.yaml
 grep -n 'rule-set:acl-gfw' /tmp/flclash.yaml
+grep -n 'hoyoverse.com.*#🎮 游戏' /tmp/flclash.yaml
 
 python targets/clash/build.py --platform muse \
   --rules rules/redirect-to-cn.list \
@@ -108,8 +109,8 @@ grep -n 'respect-rules: true' /tmp/clash-backcn-muse.yaml
 
 For a DNS change also pass `--dns 'https://dns.nextdns.io/PLACEHOLDER'` and confirm the
 FlClash `nameserver-policy` foreign entries (and Hako/Verge / Shadowrocket `dns-server`)
-use that URL. For Muse, the same URL appears with a `#分组` suffix
-(`#📺 YouTube`, `#🎨 Muse`, `#🎯 全球直连`). Never commit a real NextDNS URL.
+use that URL. For FlClash and Muse, the same URL appears with a `#分组` suffix
+(`#🎮 游戏`, `#📺 YouTube`, `#🎨 Muse`, `#🎯 全球直连`). Never commit a real NextDNS URL.
 
 ## Adding the sing-box (Android) target
 

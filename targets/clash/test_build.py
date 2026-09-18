@@ -104,6 +104,19 @@ class BuildTests(unittest.TestCase):
                 },
             )
 
+    def test_flclash_resolver_binds_foreign_doh_to_the_policy_group(self) -> None:
+        foreign = "https://dns.example/dns-query"
+        self.assertEqual(
+            build._flclash_resolver(build.GROUP_GAME, foreign),
+            f'"{foreign}#{build.GROUP_GAME}"',
+        )
+        self.assertEqual(
+            build._flclash_resolver(build.GROUP_FINAL, foreign),
+            f'"{build.CN_DNS}#{build.GROUP_FINAL}"',
+        )
+        self.assertEqual(build._flclash_resolver("DIRECT", foreign), "system")
+        self.assertEqual(build._flclash_resolver("REJECT", foreign), "system")
+
     def test_flclash_is_a_single_profile_with_location_switch_groups(self) -> None:
         root = Path(__file__).resolve().parents[2]
         apps = build.load_android_apps(str(root / "rules" / "android-apps.list"))
@@ -123,23 +136,68 @@ class BuildTests(unittest.TestCase):
         self.assertIn("enhanced-mode: redir-host", text)
         self.assertIn("respect-rules: true", text)
         self.assertIn("nameserver-policy:", text)
-        self.assertIn('    - "https://223.5.5.5/dns-query"', text)
-        self.assertIn('    "+.xiaohongshu.com": "https://223.5.5.5/dns-query"', text)
-        self.assertIn('    "+.18comic.vip": "https://dns.example/dns-query"', text)
-        self.assertIn('    "+.missav.ai": "https://dns.example/dns-query"', text)
-        self.assertIn('    "+.browsercrp.vivo.com.cn": "https://223.5.5.5/dns-query"', text)
-        self.assertIn('    "+.chase.com": "https://dns.example/dns-query"', text)
-        self.assertIn('    "+.hoyoverse.com": "https://dns.example/dns-query"', text)
-        self.assertIn('    "rule-set:youtube": "https://dns.example/dns-query"', text)
-        self.assertIn('    "rule-set:acl-gfw": "https://dns.example/dns-query"', text)
-        self.assertIn('    "rule-set:acl-cn-domain": "https://223.5.5.5/dns-query"', text)
+        self.assertIn(
+            f'    - "https://223.5.5.5/dns-query#{build.GROUP_FINAL}"',
+            text,
+        )
+        self.assertIn(
+            f'    "+.xiaohongshu.com": "https://223.5.5.5/dns-query#{build.GROUP_FINAL}"',
+            text,
+        )
+        self.assertIn(
+            f'    "+.18comic.vip": "https://dns.example/dns-query#{build.GROUP_18}"',
+            text,
+        )
+        self.assertIn(
+            f'    "+.missav.ai": "https://dns.example/dns-query#{build.GROUP_MISSAV}"',
+            text,
+        )
+        self.assertIn(
+            '    "+.browsercrp.vivo.com.cn": '
+            f'"https://223.5.5.5/dns-query#{build.GROUP_SAFE}"',
+            text,
+        )
+        self.assertIn(
+            f'    "+.chase.com": "https://dns.example/dns-query#{build.GROUP_NA}"',
+            text,
+        )
+        self.assertIn(
+            f'    "+.hoyoverse.com": "https://dns.example/dns-query#{build.GROUP_GAME}"',
+            text,
+        )
+        self.assertIn(
+            f'    "+.mihoyo.com": "https://dns.example/dns-query#{build.GROUP_GAME}"',
+            text,
+        )
+        self.assertIn(
+            f'    "rule-set:youtube": "https://dns.example/dns-query#{build.GROUP_GLOBAL}"',
+            text,
+        )
+        self.assertIn(
+            f'    "rule-set:acl-gfw": "https://dns.example/dns-query#{build.GROUP_GLOBAL}"',
+            text,
+        )
+        self.assertIn(
+            '    "rule-set:acl-cn-domain": '
+            f'"https://223.5.5.5/dns-query#{build.GROUP_FINAL}"',
+            text,
+        )
+        self.assertNotIn('"https://dns.example/dns-query"', text)
+        self.assertNotIn('"https://223.5.5.5/dns-query"', text)
         self.assertIn("proxy-server-nameserver:\n    - system", text)
         self.assertNotIn("direct-nameserver:", text)
         self.assertNotIn("enhanced-mode: fake-ip", text)
         default_dns = build.render(
             "backcn", ["xiaohongshu.com"], [], "", "flclash", apps, policy_domains,
         )
-        self.assertIn('    "rule-set:youtube": "https://1.1.1.1/dns-query"', default_dns)
+        self.assertIn(
+            f'    "rule-set:youtube": "https://1.1.1.1/dns-query#{build.GROUP_GLOBAL}"',
+            default_dns,
+        )
+        self.assertIn(
+            f'    "+.hoyoverse.com": "https://1.1.1.1/dns-query#{build.GROUP_GAME}"',
+            default_dns,
+        )
         self.assertNotIn("dns.example", default_dns)
         self.assertIn(f"PROCESS-NAME,com.chase.sig.android,{build.GROUP_NA}", text)
         self.assertIn(f"PROCESS-NAME,com.miHoYo.Yuanshen,{build.GROUP_GAME}", text)
