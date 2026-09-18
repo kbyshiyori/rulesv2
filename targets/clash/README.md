@@ -112,6 +112,96 @@ Import `https://kbyshiyori.github.io/rulesv2/flclash.yaml`, **Rule** mode, enabl
 lookup (查找进程), install `private-provider.yaml` into `private-provider`. Access-control
 app lists are VPN membership only; they do not replace these `PROCESS-NAME` rules.
 
+### Inspect FlClash through ADB
+
+On the tested Android FlClash installation, mihomo's local controller listens on
+`127.0.0.1:9090`. Check the port first; it can differ on another installation. Forward
+it to a local port on the computer, then read the controller API:
+
+```sh
+adb devices
+adb shell dumpsys connectivity | rg 'VPN CONNECTED extra: VPN:com.follow.clash'
+adb shell ss -ltn 2>/dev/null | rg '127\.0\.0\.1:9090'
+adb forward tcp:19090 tcp:9090
+curl -sS http://127.0.0.1:19090/version
+```
+
+`/connections` contains **current** connections. Start the app being diagnosed while
+this command runs to catch short-lived connections. This prints only the process,
+destination, matched rule, selected outbound chain, and byte counts:
+
+```sh
+python3.12 - <<'PY'
+import json
+import time
+import urllib.request
+
+seen = set()
+for _ in range(60):
+    data = json.load(urllib.request.urlopen(
+        "http://127.0.0.1:19090/connections", timeout=2
+    ))
+    for connection in data["connections"]:
+        metadata = connection["metadata"]
+        if metadata.get("process") != "com.miHoYo.Yuanshen":
+            continue
+        if connection["id"] in seen:
+            continue
+        seen.add(connection["id"])
+        print({
+            "network": metadata.get("network"),
+            "host": metadata.get("host"),
+            "ip": metadata.get("destinationIP"),
+            "port": metadata.get("destinationPort"),
+            "rule": connection.get("rule"),
+            "chains": connection.get("chains"),
+            "upload": connection.get("upload"),
+            "download": connection.get("download"),
+        }, flush=True)
+    time.sleep(0.5)
+PY
+```
+
+`/dns/query` tests the DNS policy actually loaded in the running core. A failed query's
+raw error can include a private DoH URL, so print only its status and whether it timed
+out:
+
+```sh
+python3.12 - <<'PY'
+import json
+import urllib.error
+import urllib.request
+
+for name in ("dispatchcnglobal.yuanshen.com", "www.baidu.com"):
+    url = "http://127.0.0.1:19090/dns/query?name=" + name + "&type=A"
+    try:
+        answer = json.load(urllib.request.urlopen(url, timeout=8))
+        print(name, "OK", [item["data"] for item in answer.get("Answer", [])])
+    except urllib.error.HTTPError as error:
+        message = error.read().decode("utf-8", errors="replace")
+        print(name, "HTTP", error.code,
+              "timeout" if "deadline exceeded" in message else "query failed")
+PY
+```
+
+This is the mihomo controller API, not Android `logcat`. The FlClash UI's
+**Tools → Requests** shows recent request history; **Tools → Connections** shows
+currently open connections and their process, rule, and outbound chain. Android game
+errors can also be checked with a targeted `adb logcat` filter:
+
+```sh
+adb shell logcat -d -t 5000 |
+  rg 'E Unity.*(UnknownHostException|ConnectException|SocketTimeoutException)' |
+  cut -c1-240
+```
+
+Raw game telemetry may contain account tokens. Review and redact any output before
+sharing it. Remove the forwarding rule when finished:
+
+```sh
+adb forward --remove tcp:19090
+```
+
 ## Clash Muse (5 groups)
 
 One published file, not backcn/cnip. Same location-switch idea as FlClash, without Android
