@@ -4,11 +4,11 @@ Version-controlled build pipeline for personal proxy rule configs. Takes a maint
 upstream ruleset, layers local overrides (回国 domain routing, DNS), and publishes a
 ready-to-subscribe routing profile per client.
 
-- **Today:** Shadowrocket, Clash/Hako (macOS/iOS), and Clash Verge Rev (Windows), each with
-  回国 (`backcn`) and 出国 (`cnip`) profiles; FlClash (Android) is **one** profile whose
-  `🎯 全球直连` / `🐟 漏网之鱼` groups you switch by location; `clash-backcn-muse.yaml` is the
-  same idea with five ACL4SSR-style groups (`📺 YouTube`, `🎨 Muse`, `🎯 全球直连`, `🇨🇳 中国代理`,
-  `🐟 漏网之鱼`).
+- **Today:** Shadowrocket and Clash/Hako (macOS/iOS) each with 回国 (`backcn`) and 出国
+  (`cnip`) profiles; Clash Verge Rev (Windows), FlClash (Android), and
+  `clash-backcn-muse.yaml` are each **one** profile whose groups you switch by location.
+  Verge groups: `📺 YouTube`, `🎨 Muse`, `🎮 游戏`, `🎯 全球直连`, `🇨🇳 中国代理`,
+  `🐟 漏网之鱼`. Muse is the same idea without the game process group.
 - **Planned:** sing-box config for other Android clients (same `rules/` intent, different emitter).
 
 > This repo is worked on mainly by coding agents (Claude / Codex); the owner mainly
@@ -54,7 +54,7 @@ the same file name while using different WireGuard client keys and addresses.
   injected at the top with the route that exits in China: `PROXY` in `backcn`, `DIRECT`
   in `cnip`. (First case: 小红书, diagnosed from a PacketTunnel log on 2026-07-15.)
 - **原神 routes by app/process, not by server IP.** Clash Verge Rev uses `YuanShen.exe` →
-  `原神`. FlClash uses `com.miHoYo.Yuanshen` → `游戏`, with the other NekoBox Android app
+  `🎮 游戏`. FlClash uses `com.miHoYo.Yuanshen` → `🎮 游戏`, with the other NekoBox Android app
   groups in [`rules/android-apps.list`](rules/android-apps.list).
 - **FlClash is one profile, not backcn/cnip.** Groups: `🇨🇦 北美`, `🎯 全球直连` (NekoBox 绕过 apps +
   ACL4SSR GFW/media for the browser), `🎮 游戏` (原神 only), `🔞 18`, `🎬 missav`, `🛡️ 安全浏览`,
@@ -63,12 +63,23 @@ the same file name while using different WireGuard client keys and addresses.
   DoH (`--dns` / Cloudflare) via the other groups, each URL bound with a `#分组` suffix
   (`#🎮 游戏`, `#🎯 全球直连`, …) so `respect-rules` actually dials through that exit.
   `geolocation-!cn` is not used.
+- **Clash Verge Rev is one 6-group profile, not backcn/cnip.** Same location switch as Muse,
+  plus Windows `YuanShen.exe` and hoyoverse/mihoyo suffixes on `🎮 游戏`. `📺 YouTube`,
+  `🎨 Muse` ([`rules/muse.list`](rules/muse.list)), `🎮 游戏`, `🎯 全球直连` (ACL4SSR
+  GFW/media/Telegram), `🇨🇳 中国代理` (`redirect-to-cn` + CN lists + `GEOIP,CN`), `🐟 漏网之鱼`
+  (`MATCH` fallback, same idea as Hako `MATCH`). Abroad: `🎯 全球直连=DIRECT`,
+  `🇨🇳 中国代理`=China node, `🐟 漏网之鱼=DIRECT`. In CN: `🎯 全球直连` / `🐟 漏网之鱼`=overseas node,
+  `🇨🇳 中国代理=DIRECT`. YouTube and Muse default to `🎯 全球直连`; pick a JP/game node in `🎮 游戏`.
+  DNS is the Muse same-side split
+  (`redir-host` + `respect-rules`) with each DoH URL bound to the matching group
+  (`#📺 YouTube` / `#🎨 Muse` / `#🎮 游戏` / `#🎯 全球直连` / `#🇨🇳 中国代理` / `#🐟 漏网之鱼`).
 - **Clash Muse is one 5-group profile, not backcn/cnip.** Same location switch as FlClash,
   without Android process groups. `📺 YouTube` (youtube rule-set), `🎨 Muse`
   ([`rules/muse.list`](rules/muse.list)), `🎯 全球直连` (ACL4SSR GFW/media/Telegram),
-  `🇨🇳 中国代理` (`redirect-to-cn` + CN lists + `GEOIP,CN`), `🐟 漏网之鱼` (`MATCH` fallback). Abroad:
-  `🎯 全球直连=DIRECT`, `🇨🇳 中国代理` / `🐟 漏网之鱼`=China node. In CN: `🎯 全球直连`=overseas node,
-  `🇨🇳 中国代理` / `🐟 漏网之鱼=DIRECT`. YouTube and Muse default to `🎯 全球直连`. DNS is the
+  `🇨🇳 中国代理` (`redirect-to-cn` + CN lists + `GEOIP,CN`), `🐟 漏网之鱼` (`MATCH` fallback, same
+  idea as Hako `MATCH`). Abroad: `🎯 全球直连=DIRECT`, `🇨🇳 中国代理`=China node,
+  `🐟 漏网之鱼=DIRECT`. In CN: `🎯 全球直连` / `🐟 漏网之鱼`=overseas node, `🇨🇳 中国代理=DIRECT`.
+  YouTube and Muse default to `🎯 全球直连`. DNS is the
   FlClash same-side split (`redir-host` + `respect-rules`) with each DoH URL bound to the
   matching group (`#📺 YouTube` / `#🎨 Muse` / `#🎯 全球直连` / `#🇨🇳 中国代理` / `#🐟 漏网之鱼`).
 - **China-domain list, inlined.** To make CN traffic route (and resolve) via the node
@@ -131,11 +142,13 @@ python targets/clash/build.py --profile backcn \
   --direct-rules rules/direct.list \
   --out dist/clash/clash-backcn.yaml
 
-# Clash Verge Rev: same rules, plus Windows executable routing
-python targets/clash/build.py --platform verge --profile backcn \
+# Clash Verge Rev: one profile; switch 🎯 全球直连 / 🇨🇳 中国代理 / 🐟 漏网之鱼 by location
+python targets/clash/build.py --platform verge \
   --rules rules/redirect-to-cn.list \
   --direct-rules rules/direct.list \
-  --out dist/clash/clash-verge-backcn.yaml
+  --muse-rules rules/muse.list \
+  --policy-domains rules/policy-domains.list \
+  --out dist/clash/clash-verge.yaml
 
 # FlClash Android: one profile; switch 🎯 全球直连 / 🐟 漏网之鱼 by location
 python targets/clash/build.py --platform flclash \
@@ -156,14 +169,13 @@ python targets/clash/build.py --platform muse \
 
 ## Delivery
 
-CI builds on a daily cron (and on push) and publishes eight files to **GitHub Pages**:
+CI builds on a daily cron (and on push) and publishes seven files to **GitHub Pages**:
 
 - `https://kbyshiyori.github.io/rulesv2/sr-backcn.conf`
 - `https://kbyshiyori.github.io/rulesv2/sr-cnip.conf`
 - `https://kbyshiyori.github.io/rulesv2/clash-backcn.yaml`
 - `https://kbyshiyori.github.io/rulesv2/clash-cnip.yaml`
-- `https://kbyshiyori.github.io/rulesv2/clash-verge-backcn.yaml`
-- `https://kbyshiyori.github.io/rulesv2/clash-verge-cnip.yaml`
+- `https://kbyshiyori.github.io/rulesv2/clash-verge.yaml`
 - `https://kbyshiyori.github.io/rulesv2/flclash.yaml`
 - `https://kbyshiyori.github.io/rulesv2/clash-backcn-muse.yaml`
 

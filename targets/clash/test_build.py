@@ -66,24 +66,111 @@ class BuildTests(unittest.TestCase):
             self.assertIn("    use:\n      - private-provider", youtube_group)
             self.assertNotIn("default-selected:", youtube_group)
 
-    def test_verge_adds_yuanshen_process_group_before_direct_exceptions(self) -> None:
-        for profile in ("backcn", "cnip"):
-            text = build.render(
-                profile, ["yuanshen.com"], ["IP-CIDR,192.0.2.1/32,DIRECT,no-resolve"],
-                "", "verge",
-            )
-            group = text.split('  - name: "原神"\n', 1)[1].split(
-                "rule-providers:", 1
-            )[0]
-            self.assertIn("    type: select", group)
-            self.assertIn("    use:\n      - private-provider", group)
-            self.assertIn("      - DIRECT", group)
-            self.assertIn("find-process-mode: always", text)
-            self.assertLess(
-                text.index("PROCESS-NAME,YuanShen.exe,原神"),
-                text.index("IP-CIDR,192.0.2.1/32,DIRECT,no-resolve"),
-            )
-            self.assertNotIn("PROCESS-NAME,YuanShen.exe", build.render(profile, [], [], ""))
+    def test_game_domain_rules_keep_only_the_game_group(self) -> None:
+        rules = [
+            f"DOMAIN-SUFFIX,hoyoverse.com,{build.GROUP_GAME}",
+            f"DOMAIN-SUFFIX,chase.com,{build.GROUP_NA}",
+            f"DOMAIN-SUFFIX,18comic.vip,{build.GROUP_18}",
+        ]
+        self.assertEqual(
+            build.game_domain_rules(rules),
+            [f"DOMAIN-SUFFIX,hoyoverse.com,{build.GROUP_GAME}"],
+        )
+
+    def test_verge_is_a_six_group_universal_profile(self) -> None:
+        root = Path(__file__).resolve().parents[2]
+        muse_rules = build.load_muse_rules(str(root / "rules" / "muse.list"))
+        policy_domains = build.load_policy_domains(
+            str(root / "rules" / "policy-domains.list")
+        )
+        text = build.render(
+            "backcn", ["xiaohongshu.com"],
+            ["IP-CIDR,192.0.2.1/32,DIRECT,no-resolve"],
+            "https://dns.example/dns-query", "verge", None, policy_domains, muse_rules,
+        )
+        same_if_cnip = build.render(
+            "cnip", ["xiaohongshu.com"],
+            ["IP-CIDR,192.0.2.1/32,DIRECT,no-resolve"],
+            "https://dns.example/dns-query", "verge", None, policy_domains, muse_rules,
+        )
+        self.assertEqual(text, same_if_cnip)
+        self.assertIn("find-process-mode: always", text)
+        self.assertIn("enhanced-mode: redir-host", text)
+        self.assertIn("respect-rules: true", text)
+        self.assertNotIn("store-fake-ip:", text)
+        self.assertNotIn("  - name: PROXY\n", text)
+        self.assertNotIn("  - name: YouTube\n", text)
+        self.assertNotIn('  - name: "原神"', text)
+        self.assertNotIn(f"  - name: \"{build.GROUP_18}\"", text)
+        self.assertNotIn(f"  - name: \"{build.GROUP_NA}\"", text)
+        self.assertNotIn(f"DOMAIN-SUFFIX,chase.com,{build.GROUP_NA}", text)
+        self.assertNotIn(f"DOMAIN-SUFFIX,18comic.vip,{build.GROUP_18}", text)
+        group_block = text.split("proxy-groups:\n", 1)[1].split("rule-providers:", 1)[0]
+        self.assertEqual(group_block.count("  - name:"), len(build.VERGE_SELECT_GROUPS) + 1)
+
+        def group_pos(name: str) -> int:
+            return group_block.index(f"  - name: \"{name}\"")
+
+        self.assertLess(group_pos(build.GROUP_YOUTUBE), group_pos(build.GROUP_MUSE))
+        self.assertLess(group_pos(build.GROUP_MUSE), group_pos(build.GROUP_GAME))
+        self.assertLess(group_pos(build.GROUP_GAME), group_pos(build.GROUP_GLOBAL))
+        self.assertLess(group_pos(build.GROUP_GLOBAL), group_pos(build.GROUP_CN))
+        self.assertLess(group_pos(build.GROUP_CN), group_pos(build.GROUP_FINAL))
+        youtube_group = text.split(f'  - name: "{build.GROUP_YOUTUBE}"\n', 1)[1].split(
+            "  - name:", 1
+        )[0]
+        game_group = text.split(f'  - name: "{build.GROUP_GAME}"\n', 1)[1].split(
+            "  - name:", 1
+        )[0]
+        self.assertIn(f'      - "{build.GROUP_GLOBAL}"', youtube_group)
+        self.assertIn("    use:\n      - private-provider", game_group)
+        self.assertIn("      - DIRECT", game_group)
+        self.assertIn(f'      - "{build.GROUP_FINAL}"', game_group)
+        self.assertIn(f"DOMAIN-SUFFIX,muse.ai,{build.GROUP_MUSE}", text)
+        self.assertIn(f"DOMAIN-SUFFIX,hoyoverse.com,{build.GROUP_GAME}", text)
+        self.assertIn(f"DOMAIN-SUFFIX,mihoyo.com,{build.GROUP_GAME}", text)
+        self.assertIn(f"PROCESS-NAME,YuanShen.exe,{build.GROUP_GAME}", text)
+        self.assertIn(f"RULE-SET,youtube,{build.GROUP_YOUTUBE}", text)
+        self.assertIn(f"RULE-SET,acl-gfw,{build.GROUP_GLOBAL}", text)
+        self.assertIn(f"DOMAIN-SUFFIX,xiaohongshu.com,{build.GROUP_CN}", text)
+        self.assertIn(f"GEOIP,CN,{build.GROUP_CN},no-resolve", text)
+        self.assertIn(f"MATCH,{build.GROUP_FINAL}", text)
+        self.assertLess(
+            text.index(f"DOMAIN-SUFFIX,muse.ai,{build.GROUP_MUSE}"),
+            text.index(f"DOMAIN-SUFFIX,hoyoverse.com,{build.GROUP_GAME}"),
+        )
+        self.assertLess(
+            text.index(f"DOMAIN-SUFFIX,hoyoverse.com,{build.GROUP_GAME}"),
+            text.index(f"PROCESS-NAME,YuanShen.exe,{build.GROUP_GAME}"),
+        )
+        self.assertLess(
+            text.index(f"PROCESS-NAME,YuanShen.exe,{build.GROUP_GAME}"),
+            text.index("IP-CIDR,192.0.2.1/32,DIRECT,no-resolve"),
+        )
+        self.assertLess(
+            text.index(f"PROCESS-NAME,YuanShen.exe,{build.GROUP_GAME}"),
+            text.index(f"RULE-SET,youtube,{build.GROUP_YOUTUBE}"),
+        )
+        self.assertIn('    "+.muse.ai": "https://dns.example/dns-query#🎨 Muse"', text)
+        self.assertIn(
+            '    "+.hoyoverse.com": "https://dns.example/dns-query#🎮 游戏"',
+            text,
+        )
+        self.assertIn(
+            '    "rule-set:youtube": "https://dns.example/dns-query#📺 YouTube"',
+            text,
+        )
+        self.assertIn(
+            '    "+.xiaohongshu.com": "https://223.5.5.5/dns-query#🇨🇳 中国代理"',
+            text,
+        )
+        self.assertNotIn('"https://dns.example/dns-query"', text)
+        self.assertNotIn("PROCESS-NAME,YuanShen.exe", build.render("backcn", [], [], ""))
+        self.assertNotIn("geolocation-!cn", text)
+        self.assertIn(
+            f"{build.ACL4SSR_BASE}/Providers/ProxyGFWlist.yaml",
+            text,
+        )
 
     def test_android_apps_keep_first_group_and_exact_package_case(self) -> None:
         with TemporaryDirectory() as directory:

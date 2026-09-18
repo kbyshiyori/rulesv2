@@ -29,6 +29,12 @@ python3.12 targets/clash/build.py --platform muse \
   --direct-rules rules/direct.list \
   --muse-rules rules/muse.list \
   --out /tmp/clash-backcn-muse.yaml
+python3.12 targets/clash/build.py --platform verge \
+  --rules rules/redirect-to-cn.list \
+  --direct-rules rules/direct.list \
+  --muse-rules rules/muse.list \
+  --policy-domains rules/policy-domains.list \
+  --out /tmp/clash-verge.yaml
 ```
 
 The tests and Clash build work offline. A normal Shadowrocket build fetches the
@@ -105,11 +111,27 @@ grep -n 'RULE-SET,acl-gfw,🎯 全球直连' /tmp/clash-backcn-muse.yaml
 grep -n 'GEOIP,CN,🇨🇳 中国代理' /tmp/clash-backcn-muse.yaml
 grep -n 'MATCH,🐟 漏网之鱼' /tmp/clash-backcn-muse.yaml
 grep -n 'respect-rules: true' /tmp/clash-backcn-muse.yaml
+
+python targets/clash/build.py --platform verge \
+  --rules rules/redirect-to-cn.list \
+  --direct-rules rules/direct.list \
+  --muse-rules rules/muse.list \
+  --policy-domains rules/policy-domains.list \
+  --out /tmp/clash-verge.yaml
+grep -n 'PROCESS-NAME,YuanShen.exe,🎮 游戏' /tmp/clash-verge.yaml
+grep -n 'DOMAIN-SUFFIX,muse.ai,🎨 Muse' /tmp/clash-verge.yaml
+grep -n 'DOMAIN-SUFFIX,hoyoverse.com,🎮 游戏' /tmp/clash-verge.yaml
+grep -n 'RULE-SET,youtube,📺 YouTube' /tmp/clash-verge.yaml
+grep -n 'RULE-SET,acl-gfw,🎯 全球直连' /tmp/clash-verge.yaml
+grep -n 'GEOIP,CN,🇨🇳 中国代理' /tmp/clash-verge.yaml
+grep -n 'MATCH,🐟 漏网之鱼' /tmp/clash-verge.yaml
+grep -n 'respect-rules: true' /tmp/clash-verge.yaml
+grep -n 'hoyoverse.com.*#🎮 游戏' /tmp/clash-verge.yaml
 ```
 
 For a DNS change also pass `--dns 'https://dns.nextdns.io/PLACEHOLDER'` and confirm the
-FlClash `nameserver-policy` foreign entries (and Hako/Verge / Shadowrocket `dns-server`)
-use that URL. For FlClash and Muse, the same URL appears with a `#分组` suffix
+FlClash / Muse / Verge `nameserver-policy` foreign entries (and Hako / Shadowrocket
+`dns-server`) use that URL. For FlClash, Muse, and Verge, the same URL appears with a `#分组` suffix
 (`#🎮 游戏`, `#📺 YouTube`, `#🎨 Muse`, `#🎯 全球直连`). Never commit a real NextDNS URL.
 
 ## Adding the sing-box (Android) target

@@ -70,22 +70,16 @@ jobs:
             --dns "$NEXTDNS_DOH_URL" \
             --out _site/clash-cnip.yaml
 
-      - name: Build Clash Verge Rev profiles
+      - name: Build Clash Verge Rev profile
         run: |
           python targets/clash/build.py \
             --platform verge \
-            --profile backcn \
             --rules rules/redirect-to-cn.list \
             --direct-rules rules/direct.list \
+            --muse-rules rules/muse.list \
+            --policy-domains rules/policy-domains.list \
             --dns "$NEXTDNS_DOH_URL" \
-            --out _site/clash-verge-backcn.yaml
-          python targets/clash/build.py \
-            --platform verge \
-            --profile cnip \
-            --rules rules/redirect-to-cn.list \
-            --direct-rules rules/direct.list \
-            --dns "$NEXTDNS_DOH_URL" \
-            --out _site/clash-verge-cnip.yaml
+            --out _site/clash-verge.yaml
 
       - name: Build FlClash profile
         run: |
