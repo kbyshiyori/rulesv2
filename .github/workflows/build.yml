@@ -98,6 +98,16 @@ jobs:
             --dns "$NEXTDNS_DOH_URL" \
             --out _site/flclash.yaml
 
+      - name: Build Clash Muse profile
+        run: |
+          python targets/clash/build.py \
+            --platform muse \
+            --rules rules/redirect-to-cn.list \
+            --direct-rules rules/direct.list \
+            --muse-rules rules/muse.list \
+            --dns "$NEXTDNS_DOH_URL" \
+            --out _site/clash-backcn-muse.yaml
+
       - name: Test builders
         run: |
           python -m unittest discover -s targets/shadowrocket -p 'test_*.py'
