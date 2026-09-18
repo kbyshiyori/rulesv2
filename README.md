@@ -7,7 +7,7 @@ ready-to-subscribe routing profile per client.
 - **Today:** Shadowrocket, Clash/Hako (macOS/iOS), and Clash Verge Rev (Windows), each with
   回国 (`backcn`) and 出国 (`cnip`) profiles; FlClash (Android) is **one** profile whose
   `🎯 全球直连` / `🐟 漏网之鱼` groups you switch by location; `clash-backcn-muse.yaml` is the
-  same idea with five ACL4SSR-style groups (`📺 YouTube`, `🎨 Muse`, `🎯 全球直连`, `🇨🇳 中国IP`,
+  same idea with five ACL4SSR-style groups (`📺 YouTube`, `🎨 Muse`, `🎯 全球直连`, `🇨🇳 中国代理`,
   `🐟 漏网之鱼`).
 - **Planned:** sing-box config for other Android clients (same `rules/` intent, different emitter).
 
@@ -65,9 +65,9 @@ the same file name while using different WireGuard client keys and addresses.
 - **Clash Muse is one 5-group profile, not backcn/cnip.** Same location switch as FlClash,
   without Android process groups. `📺 YouTube` (youtube rule-set), `🎨 Muse`
   ([`rules/muse.list`](rules/muse.list)), `🎯 全球直连` (ACL4SSR GFW/media/Telegram),
-  `🇨🇳 中国IP` (`redirect-to-cn` + CN lists + `GEOIP,CN`), `🐟 漏网之鱼` (`MATCH`). Abroad:
-  `🎯 全球直连=DIRECT`, `🇨🇳 中国IP` / `🐟 漏网之鱼`=China node. In CN: `🎯 全球直连`=overseas node,
-  `🇨🇳 中国IP` / `🐟 漏网之鱼=DIRECT`. YouTube and Muse default to `🎯 全球直连`. DNS is the
+  `🇨🇳 中国代理` (`redirect-to-cn` + CN lists + `GEOIP,CN`), `🐟 漏网之鱼` (`MATCH` fallback). Abroad:
+  `🎯 全球直连=DIRECT`, `🇨🇳 中国代理` / `🐟 漏网之鱼`=China node. In CN: `🎯 全球直连`=overseas node,
+  `🇨🇳 中国代理` / `🐟 漏网之鱼=DIRECT`. YouTube and Muse default to `🎯 全球直连`. DNS is the
   FlClash same-side split (`redir-host` + `respect-rules`).
 - **China-domain list, inlined.** To make CN traffic route (and resolve) via the node
   instead of relying on `GEOIP,CN` — which forces a local/境外 DNS lookup and re-leaks CDN
@@ -143,7 +143,7 @@ python targets/clash/build.py --platform flclash \
   --policy-domains rules/policy-domains.list \
   --out dist/clash/flclash.yaml
 
-# Clash Muse: one 5-group profile; switch 🎯 全球直连 / 🇨🇳 中国IP / 🐟 漏网之鱼 by location
+# Clash Muse: one 5-group profile; switch 🎯 全球直连 / 🇨🇳 中国代理 / 🐟 漏网之鱼 by location
 python targets/clash/build.py --platform muse \
   --rules rules/redirect-to-cn.list \
   --direct-rules rules/direct.list \

@@ -101,7 +101,7 @@ python targets/clash/build.py --platform muse \
 grep -n 'DOMAIN-SUFFIX,muse.ai,🎨 Muse' /tmp/clash-backcn-muse.yaml
 grep -n 'RULE-SET,youtube,📺 YouTube' /tmp/clash-backcn-muse.yaml
 grep -n 'RULE-SET,acl-gfw,🎯 全球直连' /tmp/clash-backcn-muse.yaml
-grep -n 'GEOIP,CN,🇨🇳 中国IP' /tmp/clash-backcn-muse.yaml
+grep -n 'GEOIP,CN,🇨🇳 中国代理' /tmp/clash-backcn-muse.yaml
 grep -n 'MATCH,🐟 漏网之鱼' /tmp/clash-backcn-muse.yaml
 grep -n 'respect-rules: true' /tmp/clash-backcn-muse.yaml
 ```

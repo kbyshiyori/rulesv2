@@ -39,7 +39,7 @@ GROUP_SAFE = "🛡️ 安全浏览"
 GROUP_FINAL = "🐟 漏网之鱼"
 GROUP_YOUTUBE = "📺 YouTube"
 GROUP_MUSE = "🎨 Muse"
-GROUP_CN = "🇨🇳 中国IP"
+GROUP_CN = "🇨🇳 中国代理"
 ANDROID_GROUPS = (GROUP_NA, GROUP_GAME, GROUP_GLOBAL)
 FLCLASH_SELECT_GROUPS = (GROUP_18, GROUP_MISSAV, GROUP_SAFE, GROUP_GAME, GROUP_NA, GROUP_GLOBAL)
 MUSE_SELECT_GROUPS = (GROUP_YOUTUBE, GROUP_MUSE, GROUP_GLOBAL, GROUP_CN)
@@ -300,7 +300,7 @@ def render(
         foreign_policy = GROUP_GLOBAL
         youtube_policy = GROUP_YOUTUBE
         profile_label = (
-            "single Clash profile; switch 🎯 全球直连 / 🇨🇳 中国IP / 🐟 漏网之鱼 by location"
+            "single Clash profile; switch 🎯 全球直连 / 🇨🇳 中国代理 / 🐟 漏网之鱼 by location"
         )
     else:
         cn_policy = "PROXY" if profile == "backcn" else "DIRECT"

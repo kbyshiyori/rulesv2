@@ -15,7 +15,7 @@ simpler universal **Muse** profile for any mihomo client:
   `--dns` / Cloudflare on the foreign side, each dialed through the same group as the
   connection (`redir-host` + `respect-rules`).
 - `clash-backcn-muse.yaml`: one 5-group profile for both locations (no backcn/cnip split).
-  `📺 YouTube`, `🎨 Muse`, `🎯 全球直连` (ACL4SSR GFW/media/Telegram), `🇨🇳 中国IP`, and
+  `📺 YouTube`, `🎨 Muse`, `🎯 全球直连` (ACL4SSR GFW/media/Telegram), `🇨🇳 中国代理`, and
   `🐟 漏网之鱼`. Muse hosts come from `rules/muse.list`; other routing reuses `rules/` and
   ACL4SSR. Same-side DNS as FlClash.
 
@@ -118,18 +118,19 @@ follow ACL4SSR (emoji + label).
 | Group | What it matches | Typical pick |
 |-------|-----------------|--------------|
 | `📺 YouTube` | MetaCubeX `youtube` rule-set | inherit `🎯 全球直连`, or a dedicated node |
-| `🎨 Muse` | `rules/muse.list` (`muse.ai` + Meta AI hosts from the Muse YAML) | inherit `🎯 全球直连`, or a dedicated node |
+| `🎨 Muse` | `rules/muse.list` (`muse.ai` + Meta AI hosts) | inherit `🎯 全球直连`, or a dedicated node |
 | `🎯 全球直连` | ACL4SSR `ProxyGFWlist` / `ProxyMedia` / `Telegram` (non-CN) | `DIRECT` when abroad; an overseas node when in CN |
-| `🇨🇳 中国IP` | `redirect-to-cn`, ACL4SSR China domain/IP, MetaCubeX `cn`, `GEOIP,CN` | China node when abroad; `DIRECT` when in CN |
-| `🐟 漏网之鱼` | unmatched `MATCH` | China node when abroad; `DIRECT` when in CN |
+| `🇨🇳 中国代理` | `redirect-to-cn`, ACL4SSR China domain/IP, MetaCubeX `cn`, `GEOIP,CN` | China node when abroad; `DIRECT` when in CN |
+| `🐟 漏网之鱼` | `MATCH` fallback: anything that did not hit YouTube, Muse, ads, LAN, `🎯 全球直连`, or `🇨🇳 中国代理` | China node when abroad; `DIRECT` when in CN |
 
 YouTube and Muse default to `🎯 全球直连` so a location switch cascades; pick a node in
 those groups only when they need a different exit. Ads still `REJECT`. LAN / `direct.list`
 stay `DIRECT`. `geolocation-!cn` is not used.
 
-DNS matches FlClash: `redir-host` + `respect-rules`, AliDNS for CN-side names (`🇨🇳 中国IP`,
+DNS matches FlClash: `redir-host` + `respect-rules`, AliDNS for CN-side names (`🇨🇳 中国代理`,
 CN rule-sets, `redirect-to-cn`) and `--dns` / Cloudflare for foreign-side names (`📺 YouTube`,
 `🎨 Muse`, `🎯 全球直连`, GFW/media/Telegram/YouTube). Node hostnames still use `system`.
+Proxy-provider health checks use `https://captive.apple.com`.
 
 Import `https://kbyshiyori.github.io/rulesv2/clash-backcn-muse.yaml`, **Rule** mode, install
 `private-provider.yaml` into `private-provider`.

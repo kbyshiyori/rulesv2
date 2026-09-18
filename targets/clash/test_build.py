@@ -285,8 +285,9 @@ class BuildTests(unittest.TestCase):
         self.assertIn(f"DOMAIN,api.meta.ai,{build.GROUP_MUSE}", text)
         self.assertIn(f"DOMAIN,hatch-api.meta.ai,{build.GROUP_MUSE}", text)
         self.assertIn(f"DOMAIN,hatch.metaaivm.com,{build.GROUP_MUSE}", text)
-        self.assertIn(f"DOMAIN,graph.facebook.com,{build.GROUP_MUSE}", text)
         self.assertIn(f"DOMAIN,www.multimango.com,{build.GROUP_MUSE}", text)
+        self.assertNotIn("graph.facebook.com", text)
+        self.assertNotIn("facebook.com", text)
         self.assertIn(f"RULE-SET,youtube,{build.GROUP_YOUTUBE}", text)
         self.assertIn(f"RULE-SET,acl-gfw,{build.GROUP_GLOBAL}", text)
         self.assertIn(f"RULE-SET,acl-proxy-media,{build.GROUP_GLOBAL}", text)
@@ -296,6 +297,13 @@ class BuildTests(unittest.TestCase):
         self.assertIn(f"RULE-SET,cn-domain,{build.GROUP_CN}", text)
         self.assertIn(f"GEOIP,CN,{build.GROUP_CN},no-resolve", text)
         self.assertIn(f"MATCH,{build.GROUP_FINAL}", text)
+        self.assertEqual(build.GROUP_CN, "🇨🇳 中国代理")
+        self.assertEqual(build.HEALTH_CHECK_URL, "https://captive.apple.com")
+        self.assertIn(f'      url: "{build.HEALTH_CHECK_URL}"', text)
+        self.assertLess(
+            text.index(f"GEOIP,CN,{build.GROUP_CN},no-resolve"),
+            text.index(f"MATCH,{build.GROUP_FINAL}"),
+        )
         self.assertLess(
             text.index(f"DOMAIN-SUFFIX,muse.ai,{build.GROUP_MUSE}"),
             text.index(f"RULE-SET,youtube,{build.GROUP_YOUTUBE}"),
@@ -310,7 +318,7 @@ class BuildTests(unittest.TestCase):
         )
         self.assertIn('    "+.muse.ai": "https://dns.example/dns-query"', text)
         self.assertIn('    "auth.meta.com": "https://dns.example/dns-query"', text)
-        self.assertIn('    "graph.facebook.com": "https://dns.example/dns-query"', text)
+        self.assertNotIn("graph.facebook.com", text)
         self.assertIn('    "+.xiaohongshu.com": "https://223.5.5.5/dns-query"', text)
         self.assertIn('    "rule-set:youtube": "https://dns.example/dns-query"', text)
         self.assertIn('    "rule-set:acl-gfw": "https://dns.example/dns-query"', text)
