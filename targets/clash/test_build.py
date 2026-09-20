@@ -191,15 +191,19 @@ class BuildTests(unittest.TestCase):
                 },
             )
 
-    def test_flclash_resolver_binds_foreign_doh_to_the_policy_group(self) -> None:
+    def test_flclash_resolver_binds_cn_side_groups_to_alidns(self) -> None:
         foreign = "https://dns.example/dns-query"
         self.assertEqual(
             build._flclash_resolver(build.GROUP_GAME, foreign),
-            f'"{foreign}#{build.GROUP_GAME}"',
+            f'"{build.CN_DNS}#{build.GROUP_GAME}"',
         )
         self.assertEqual(
             build._flclash_resolver(build.GROUP_FINAL, foreign),
             f'"{build.CN_DNS}#{build.GROUP_FINAL}"',
+        )
+        self.assertEqual(
+            build._flclash_resolver(build.GROUP_NA, foreign),
+            f'"{foreign}#{build.GROUP_NA}"',
         )
         self.assertEqual(build._flclash_resolver("DIRECT", foreign), "system")
         self.assertEqual(build._flclash_resolver("REJECT", foreign), "system")
@@ -249,11 +253,11 @@ class BuildTests(unittest.TestCase):
             text,
         )
         self.assertIn(
-            f'    "+.hoyoverse.com": "https://dns.example/dns-query#{build.GROUP_GAME}"',
+            f'    "+.hoyoverse.com": "https://223.5.5.5/dns-query#{build.GROUP_GAME}"',
             text,
         )
         self.assertIn(
-            f'    "+.mihoyo.com": "https://dns.example/dns-query#{build.GROUP_GAME}"',
+            f'    "+.mihoyo.com": "https://223.5.5.5/dns-query#{build.GROUP_GAME}"',
             text,
         )
         self.assertIn(
@@ -282,6 +286,10 @@ class BuildTests(unittest.TestCase):
             default_dns,
         )
         self.assertIn(
+            f'    "+.hoyoverse.com": "https://223.5.5.5/dns-query#{build.GROUP_GAME}"',
+            default_dns,
+        )
+        self.assertNotIn(
             f'    "+.hoyoverse.com": "https://1.1.1.1/dns-query#{build.GROUP_GAME}"',
             default_dns,
         )

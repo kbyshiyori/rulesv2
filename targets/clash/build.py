@@ -49,7 +49,9 @@ MUSE_SELECT_GROUPS = (GROUP_YOUTUBE, GROUP_MUSE, GROUP_GLOBAL, GROUP_CN)
 VERGE_SELECT_GROUPS = (GROUP_YOUTUBE, GROUP_MUSE, GROUP_GAME, GROUP_GLOBAL, GROUP_CN)
 POLICY_DOMAIN_TARGETS = ANDROID_GROUPS + (GROUP_18, GROUP_MISSAV, GROUP_SAFE, GROUP_FINAL, "DIRECT", "PROXY", "REJECT")
 ALWAYS_DIRECT_PACKAGES = frozenset({"com.follow.clash"})
-CN_SIDE_GROUPS = frozenset({GROUP_FINAL, GROUP_SAFE, GROUP_CN})
+# FlClash 🎮 游戏 follows 🐟 漏网之鱼 by location (DIRECT in CN, a node abroad), so
+# its DNS is AliDNS rather than foreign DoH. Verge 🎮 游戏 stays foreign via _muse_dns.
+CN_SIDE_GROUPS = frozenset({GROUP_FINAL, GROUP_SAFE, GROUP_CN, GROUP_GAME})
 FLCLASH_FOREIGN_RULE_SETS = ("youtube", "acl-telegram", "acl-proxy-media", "acl-gfw")
 FLCLASH_CN_RULE_SETS = ("acl-cn-domain", "cn-domain")
 
@@ -251,9 +253,10 @@ def _flclash_dns(domains: list[str], dns: str, policy_domains: list[str]) -> lis
     # Bind each DoH URL to the routing group. With respect-rules, a bare
     # https://1.1.1.1/dns-query is itself a connection to 1.1.1.1 and falls
     # through to MATCH / 🐟 漏网之鱼. In CN that group is DIRECT, so Cloudflare
-    # (and NextDNS) time out — 🎮 游戏 domains then 500 even when that group
-    # is on a JP node. The #group suffix forces the resolver dial onto the
-    # same exit as the connection (e.g. NextDNS via 🎮 游戏).
+    # (and NextDNS) time out. 🎮 游戏 is the same location switch as 漏网之鱼
+    # (DIRECT in CN; jpty1-game abroad), so those domains use AliDNS#🎮 游戏 —
+    # NextDNS via that group still dies when the group is DIRECT. The #group
+    # suffix keeps the AliDNS dial on the same exit as the connection.
     foreign_dns = dns or FOREIGN_DNS_DEFAULT
     lines = [
         "dns:",
