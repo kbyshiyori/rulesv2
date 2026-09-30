@@ -9,10 +9,11 @@
 # Source: docs/nekobox-route-snapshot.json (vivo NekoBox route page).
 # First group wins if a package appears twice. YouTube and T-Life are 北美-only
 # because that rule was above 绕过app on the phone. Muse and the work/login
-# apps (Authenticator, Okta Verify, Outlook, Slack, Tailscale, Zoom) were
-# moved to 北美. Matching suffixes live in policy-domains.list so browser SSO
-# hops and inner DNS follow the same group. com.follow.clash is omitted here;
-# the emitter always pins it to DIRECT.
+# apps (Authenticator, Okta Verify, Outlook, Slack, Zoom) were moved to 北美.
+# Tailscale stays on 🎯 全球直连 with its control-plane suffixes. Matching
+# suffixes live in policy-domains.list so browser SSO hops and inner DNS
+# follow the same group. com.follow.clash is omitted here; the emitter
+# always pins it to DIRECT.
 
 # 北美app
 🇨🇦 北美,com.chase.sig.android,Chase
@@ -27,14 +28,13 @@
 🇨🇦 北美,com.okta.android.auth,Okta Verify
 🇨🇦 北美,com.microsoft.office.outlook,Outlook
 🇨🇦 北美,com.Slack,Slack
-🇨🇦 北美,com.tailscale.ipn,Tailscale
 🇨🇦 北美,us.zoom.videomeetings,Zoom
 
 # 游戏 (原神 only; missav is a separate domain group)
 🎮 游戏,com.miHoYo.Yuanshen,原神
 
 # NekoBox 绕过app -> 🎯 全球直连. YouTube / T-Life / Muse / work-login apps omitted
-# (北美 already claimed them).
+# (北美 already claimed them). Tailscale is listed here (not 北美).
 # Snapshot reported 31 apps / 30 visible; the missing package is still unverified.
 🎯 全球直连,ee.nekoko.nlpa.flavor1,9eSIM
 🎯 全球直连,com.google.android.projection.gearhead,Android Auto
@@ -55,5 +55,6 @@
 🎯 全球直连,com.moneybookers.skrillpayments,Skrill
 🎯 全球直连,com.twitter.android,X
 🎯 全球直连,com.hush.yamby,Yamby
+🎯 全球直连,com.tailscale.ipn,Tailscale
 🎯 全球直连,com.kddi.kdla.jp,povo2.0
 🎯 全球直连,com.samsung.android.app.watchmanager,三星智能穿戴

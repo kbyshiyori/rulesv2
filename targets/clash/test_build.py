@@ -70,12 +70,40 @@ class BuildTests(unittest.TestCase):
         rules = [
             f"DOMAIN-SUFFIX,hoyoverse.com,{build.GROUP_GAME}",
             f"DOMAIN-SUFFIX,chase.com,{build.GROUP_NA}",
+            f"DOMAIN-SUFFIX,tailscale.com,{build.GROUP_GLOBAL}",
             f"DOMAIN-SUFFIX,18comic.vip,{build.GROUP_18}",
         ]
         self.assertEqual(
             build.game_domain_rules(rules),
             [f"DOMAIN-SUFFIX,hoyoverse.com,{build.GROUP_GAME}"],
         )
+
+    def test_hako_ignores_android_apps_and_flclash_policy_domains(self) -> None:
+        root = Path(__file__).resolve().parents[2]
+        apps = build.load_android_apps(str(root / "rules" / "android-apps.list"))
+        policy_domains = build.load_policy_domains(
+            str(root / "rules" / "policy-domains.list")
+        )
+        baseline = build.render(
+            "backcn", ["xiaohongshu.com"], [], "https://dns.example/dns-query"
+        )
+        with_lists = build.render(
+            "backcn",
+            ["xiaohongshu.com"],
+            [],
+            "https://dns.example/dns-query",
+            "hako",
+            apps,
+            policy_domains,
+        )
+        self.assertEqual(baseline, with_lists)
+        self.assertNotIn("PROCESS-NAME,com.Slack", with_lists)
+        self.assertNotIn("PROCESS-NAME,com.tailscale.ipn", with_lists)
+        self.assertNotIn("PROCESS-NAME,us.zoom.videomeetings", with_lists)
+        self.assertNotIn(f"DOMAIN-SUFFIX,okta.com,{build.GROUP_NA}", with_lists)
+        self.assertNotIn(f"DOMAIN-SUFFIX,slack.com,{build.GROUP_NA}", with_lists)
+        self.assertNotIn(f"DOMAIN-SUFFIX,tailscale.com,{build.GROUP_GLOBAL}", with_lists)
+        self.assertNotIn(f"  - name: \"{build.GROUP_NA}\"", with_lists)
 
     def test_verge_is_a_six_group_universal_profile(self) -> None:
         root = Path(__file__).resolve().parents[2]
@@ -105,6 +133,12 @@ class BuildTests(unittest.TestCase):
         self.assertNotIn(f"  - name: \"{build.GROUP_NA}\"", text)
         self.assertNotIn(f"DOMAIN-SUFFIX,chase.com,{build.GROUP_NA}", text)
         self.assertNotIn(f"DOMAIN-SUFFIX,okta.com,{build.GROUP_NA}", text)
+        self.assertNotIn(f"DOMAIN-SUFFIX,slack.com,{build.GROUP_NA}", text)
+        self.assertNotIn(f"DOMAIN-SUFFIX,zoom.us,{build.GROUP_NA}", text)
+        self.assertNotIn(f"DOMAIN-SUFFIX,tailscale.com,{build.GROUP_GLOBAL}", text)
+        self.assertNotIn("PROCESS-NAME,com.Slack", text)
+        self.assertNotIn("PROCESS-NAME,com.tailscale.ipn", text)
+        self.assertNotIn("PROCESS-NAME,us.zoom.videomeetings", text)
         self.assertNotIn(f"DOMAIN-SUFFIX,18comic.vip,{build.GROUP_18}", text)
         group_block = text.split("proxy-groups:\n", 1)[1].split("rule-providers:", 1)[0]
         self.assertEqual(group_block.count("  - name:"), len(build.VERGE_SELECT_GROUPS) + 1)
@@ -262,6 +296,10 @@ class BuildTests(unittest.TestCase):
             text,
         )
         self.assertIn(
+            f'    "+.tailscale.com": "https://dns.example/dns-query#{build.GROUP_GLOBAL}"',
+            text,
+        )
+        self.assertIn(
             f'    "+.hoyoverse.com": "https://223.5.5.5/dns-query#{build.GROUP_GAME}"',
             text,
         )
@@ -317,7 +355,8 @@ class BuildTests(unittest.TestCase):
         self.assertNotIn(f"PROCESS-NAME,com.microsoft.office.outlook,{build.GROUP_GLOBAL}", text)
         self.assertIn(f"PROCESS-NAME,com.Slack,{build.GROUP_NA}", text)
         self.assertNotIn(f"PROCESS-NAME,com.Slack,{build.GROUP_GLOBAL}", text)
-        self.assertIn(f"PROCESS-NAME,com.tailscale.ipn,{build.GROUP_NA}", text)
+        self.assertIn(f"PROCESS-NAME,com.tailscale.ipn,{build.GROUP_GLOBAL}", text)
+        self.assertNotIn(f"PROCESS-NAME,com.tailscale.ipn,{build.GROUP_NA}", text)
         self.assertIn(f"PROCESS-NAME,us.zoom.videomeetings,{build.GROUP_NA}", text)
         self.assertNotIn(f"PROCESS-NAME,us.zoom.videomeetings,{build.GROUP_GLOBAL}", text)
         self.assertIn(f"PROCESS-NAME,com.reddit.frontpage,{build.GROUP_GLOBAL}", text)
@@ -332,8 +371,10 @@ class BuildTests(unittest.TestCase):
         self.assertIn(f"DOMAIN-SUFFIX,microsoftonline.com,{build.GROUP_NA}", text)
         self.assertIn(f"DOMAIN-SUFFIX,slack.com,{build.GROUP_NA}", text)
         self.assertIn(f"DOMAIN-SUFFIX,zoom.us,{build.GROUP_NA}", text)
-        self.assertIn(f"DOMAIN-SUFFIX,tailscale.com,{build.GROUP_NA}", text)
+        self.assertIn(f"DOMAIN-SUFFIX,tailscale.com,{build.GROUP_GLOBAL}", text)
+        self.assertNotIn(f"DOMAIN-SUFFIX,tailscale.com,{build.GROUP_NA}", text)
         self.assertNotIn(f"DOMAIN-SUFFIX,ts.net,{build.GROUP_NA}", text)
+        self.assertNotIn(f"DOMAIN-SUFFIX,ts.net,{build.GROUP_GLOBAL}", text)
         self.assertIn(f"DOMAIN-SUFFIX,outlook.com,{build.GROUP_NA}", text)
         self.assertIn(f"DOMAIN-SUFFIX,hoyoverse.com,{build.GROUP_GAME}", text)
         self.assertNotIn(f"DOMAIN-SUFFIX,18comic.vip,{build.GROUP_NA}", text)

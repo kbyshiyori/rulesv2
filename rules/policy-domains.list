@@ -10,8 +10,10 @@
 # 北美 / 游戏 suffixes also exist so inner DNS (no PROCESS-NAME) follows the same
 # group instead of MATCH → 漏网之鱼. YouTube stays app-only (browser uses the
 # youtube rule-set → 🎯 全球直连). Authenticator / Okta / Outlook / Slack /
-# Tailscale / Zoom suffixes are listed because those apps hop to the system
-# browser (Entra / Okta SSO) and because inner DNS has no PROCESS-NAME.
+# Zoom suffixes are listed because those apps hop to the system browser
+# (Entra / Okta SSO) and because inner DNS has no PROCESS-NAME. Tailscale
+# control-plane suffixes go to 🎯 全球直连; ts.net MagicDNS is omitted so
+# FlClash does not steal tailnet hostnames.
 
 domain-suffix,18comic.vip,🔞 18
 domain-suffix,hanime1.me,🔞 18
@@ -30,10 +32,6 @@ domain-suffix,discover.com,🇨🇦 北美
 domain-suffix,experian.com,🇨🇦 北美
 domain-suffix,usbank.com,🇨🇦 北美
 domain-suffix,t-mobile.com,🇨🇦 北美
-domain-suffix,tailscale.com,🇨🇦 北美
-domain-suffix,tailscale.io,🇨🇦 北美
-# ts.net is MagicDNS (host.tailnet.ts.net). Leave those names to Tailscale/system
-# routing; a 北美 suffix would force foreign DoH and the CA node.
 domain-suffix,slack.com,🇨🇦 北美
 domain-suffix,slack-edge.com,🇨🇦 北美
 domain-suffix,okta.com,🇨🇦 北美
@@ -49,3 +47,7 @@ domain-suffix,microsoftazuread-sso.com,🇨🇦 北美
 domain-suffix,outlook.com,🇨🇦 北美
 domain-suffix,office.com,🇨🇦 北美
 domain-suffix,office365.com,🇨🇦 北美
+domain-suffix,tailscale.com,🎯 全球直连
+domain-suffix,tailscale.io,🎯 全球直连
+# ts.net is MagicDNS (host.tailnet.ts.net). Leave those names to Tailscale/system
+# routing; a FlClash suffix would steal them via nameserver-policy.
