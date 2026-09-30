@@ -333,6 +333,7 @@ class BuildTests(unittest.TestCase):
         self.assertIn(f"DOMAIN-SUFFIX,slack.com,{build.GROUP_NA}", text)
         self.assertIn(f"DOMAIN-SUFFIX,zoom.us,{build.GROUP_NA}", text)
         self.assertIn(f"DOMAIN-SUFFIX,tailscale.com,{build.GROUP_NA}", text)
+        self.assertNotIn(f"DOMAIN-SUFFIX,ts.net,{build.GROUP_NA}", text)
         self.assertIn(f"DOMAIN-SUFFIX,outlook.com,{build.GROUP_NA}", text)
         self.assertIn(f"DOMAIN-SUFFIX,hoyoverse.com,{build.GROUP_GAME}", text)
         self.assertNotIn(f"DOMAIN-SUFFIX,18comic.vip,{build.GROUP_NA}", text)
