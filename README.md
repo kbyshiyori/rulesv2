@@ -111,7 +111,7 @@ the same file name while using different WireGuard client keys and addresses.
 rules/redirect-to-cn.list      # client-agnostic: domains that must exit via the CN node
 rules/direct.list              # client-agnostic: optional local DIRECT exceptions
 rules/android-apps.list        # Android package -> 🇨🇦 北美 / 🎮 游戏 / 🎯 全球直连
-rules/policy-domains.list      # domain -> 18 / missav / 安全浏览
+rules/policy-domains.list      # domain -> 18 / missav / 安全浏览 / 北美 / 游戏
 rules/muse.list                # Muse / Meta AI hosts -> 🎨 Muse
 docs/nekobox-route-snapshot.json # observed Android NekoBox rules; source for the lists above
 targets/shadowrocket/build.py  # emits the Shadowrocket sr-backcn.conf

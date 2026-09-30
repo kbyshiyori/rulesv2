@@ -108,8 +108,8 @@ subscription.
 | `🎬 missav` | `missav.ai`, `missav.ws` | JP/game node |
 | `🛡️ 安全浏览` | `browsercrp.vivo.com.cn` | usually `DIRECT` |
 | `🎮 游戏` | 原神 (`com.miHoYo.Yuanshen`) **and** hoyoverse/mihoyo suffixes | `DIRECT` when in CN; jpty1-game abroad (JP exit, lower latency to 国服 than naked JP) |
-| `🇨🇦 北美` | Chase, Citi, Discover, Experian, T-Life, U.S. Bank, YouTube **app**, Muse, plus those banks' suffixes | CA/PayPal node |
-| `🎯 全球直连` | the NekoBox 绕过 apps (minus YouTube/T-Life/Muse) **and** ACL4SSR `ProxyGFWlist` / `ProxyMedia` / `Telegram` for the browser | `DIRECT` when abroad; an overseas node when in CN |
+| `🇨🇦 北美` | US banks, YouTube **app**, Muse, work/login apps (Authenticator, Okta Verify, Outlook, Slack, Tailscale, Zoom), plus matching suffixes (banks, Slack, Okta, Zoom, Tailscale, Entra/Outlook login hosts) | CA/PayPal node |
+| `🎯 全球直连` | the NekoBox 绕过 apps (minus YouTube/T-Life/Muse/work-login apps) **and** ACL4SSR `ProxyGFWlist` / `ProxyMedia` / `Telegram` for the browser | `DIRECT` when abroad; an overseas node when in CN |
 | `🐟 漏网之鱼` | CN lists, `redirect-to-cn`, `GEOIP,CN`, unmatched `MATCH` | China node when abroad; `DIRECT` when in CN |
 
 Rules are emitted in that order, so domain groups win over app groups. YouTube **app** still beats the later YouTube rule-set.
@@ -128,7 +128,9 @@ so they stay on AliDNS. The `#group` suffix keeps that AliDNS dial on the same e
 the connection (DIRECT in CN; jpty1-game abroad). Node hostnames still use `system`. Inner DNS has no
 `PROCESS-NAME`, so 北美/游戏 company suffixes live in `policy-domains.list`. YouTube
 **app** traffic stays `🇨🇦 北美`; YouTube **DNS** follows the youtube rule-set
-(`🎯 全球直连`) — both foreign. Do not set `direct-nameserver: system` or DIRECT groups
+(`🎯 全球直连`) — both foreign. Slack / Okta / Zoom / Tailscale / Outlook /
+Entra suffixes share `🇨🇦 北美` with the apps so a browser SSO hop does not fall
+through to `🎯 全球直连` or `MATCH`. Do not set `direct-nameserver: system` or DIRECT groups
 would leak to the ISP resolver.
 
 Import `https://kbyshiyori.github.io/rulesv2/flclash.yaml`, **Rule** mode, enable process
