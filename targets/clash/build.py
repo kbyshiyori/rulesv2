@@ -274,9 +274,10 @@ def _flclash_dns(domains: list[str], dns: str, policy_domains: list[str]) -> lis
         "  nameserver-policy:",
         f"    {quote('+.lan')}: system",
         f"    {quote('+.local')}: system",
+        f"    {quote('+.ts.net')}: system",
         "    pikvm.kbyshiyori.com: system",
     ]
-    seen = {"+.lan", "+.local", "pikvm.kbyshiyori.com"}
+    seen = {"+.lan", "+.local", "+.ts.net", "pikvm.kbyshiyori.com"}
     for rule in policy_domains:
         kind, domain, target = rule.split(",", 2)
         key = domain if kind == "DOMAIN" else "+." + domain
