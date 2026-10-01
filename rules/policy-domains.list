@@ -12,8 +12,8 @@
 # youtube rule-set → 🎯 全球直连). Authenticator / Okta / Outlook / Slack /
 # Zoom suffixes are listed because those apps hop to the system browser
 # (Entra / Okta SSO) and because inner DNS has no PROCESS-NAME. Tailscale
-# control-plane suffixes go to 🎯 全球直连; ts.net MagicDNS is omitted so
-# FlClash does not steal tailnet hostnames.
+# control-plane suffixes go to 🎯 全球直连; ts.net MagicDNS is omitted from
+# routing so FlClash does not steal tailnet hostnames.
 
 domain-suffix,18comic.vip,🔞 18
 domain-suffix,hanime1.me,🔞 18
@@ -49,5 +49,6 @@ domain-suffix,office.com,🇨🇦 北美
 domain-suffix,office365.com,🇨🇦 北美
 domain-suffix,tailscale.com,🎯 全球直连
 domain-suffix,tailscale.io,🎯 全球直连
-# ts.net is MagicDNS (host.tailnet.ts.net). Leave those names to Tailscale/system
-# routing; a FlClash suffix would steal them via nameserver-policy.
+# ts.net is MagicDNS (host.tailnet.ts.net). Do not add a routing suffix here —
+# FlClash pins +.ts.net to system DNS in the emitter so AliDNS/漏网之鱼 does
+# not steal tailnet hostnames.

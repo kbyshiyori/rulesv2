@@ -104,6 +104,7 @@ class BuildTests(unittest.TestCase):
         self.assertNotIn(f"DOMAIN-SUFFIX,slack.com,{build.GROUP_NA}", with_lists)
         self.assertNotIn(f"DOMAIN-SUFFIX,tailscale.com,{build.GROUP_GLOBAL}", with_lists)
         self.assertNotIn(f"  - name: \"{build.GROUP_NA}\"", with_lists)
+        self.assertNotIn('"+.ts.net"', with_lists)
 
     def test_verge_is_a_six_group_universal_profile(self) -> None:
         root = Path(__file__).resolve().parents[2]
@@ -139,6 +140,7 @@ class BuildTests(unittest.TestCase):
         self.assertNotIn("PROCESS-NAME,com.Slack", text)
         self.assertNotIn("PROCESS-NAME,com.tailscale.ipn", text)
         self.assertNotIn("PROCESS-NAME,us.zoom.videomeetings", text)
+        self.assertNotIn('"+.ts.net"', text)
         self.assertNotIn(f"DOMAIN-SUFFIX,18comic.vip,{build.GROUP_18}", text)
         group_block = text.split("proxy-groups:\n", 1)[1].split("rule-providers:", 1)[0]
         self.assertEqual(group_block.count("  - name:"), len(build.VERGE_SELECT_GROUPS) + 1)
@@ -262,6 +264,10 @@ class BuildTests(unittest.TestCase):
         self.assertIn("enhanced-mode: redir-host", text)
         self.assertIn("respect-rules: true", text)
         self.assertIn("nameserver-policy:", text)
+        self.assertIn('    "+.lan": system', text)
+        self.assertIn('    "+.local": system', text)
+        self.assertIn('    "+.ts.net": system', text)
+        self.assertNotIn("DOMAIN-SUFFIX,ts.net,", text)
         self.assertIn(
             f'    - "https://223.5.5.5/dns-query#{build.GROUP_FINAL}"',
             text,

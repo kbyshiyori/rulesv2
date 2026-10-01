@@ -131,7 +131,9 @@ the connection (DIRECT in CN; jpty1-game abroad). Node hostnames still use `syst
 (`🎯 全球直连`) — both foreign. Slack / Okta / Zoom / Outlook / Entra suffixes
 share `🇨🇦 北美` with the apps so a browser SSO hop does not fall through to
 `🎯 全球直连` or `MATCH`. Tailscale control-plane suffixes share `🎯 全球直连`
-with the app; `ts.net` MagicDNS is left to Tailscale/system. Do not set `direct-nameserver: system` or DIRECT groups
+with the app; `ts.net` MagicDNS has no routing rule and uses `system` DNS
+(`+.ts.net`, same idea as `+.lan` / `+.local`) so unmatched names do not fall
+through to AliDNS / `🐟 漏网之鱼`. Do not set `direct-nameserver: system` or DIRECT groups
 would leak to the ISP resolver.
 
 Import `https://kbyshiyori.github.io/rulesv2/flclash.yaml`, **Rule** mode, enable process
