@@ -11,10 +11,10 @@ simpler universal **Muse** profile for any mihomo client:
 - `clash-verge.yaml`: one Windows Clash Verge Rev profile (no backcn/cnip split).
   `📺 YouTube`, `🎨 Muse`, `🎮 游戏` (`YuanShen.exe` plus hoyoverse/mihoyo suffixes),
   `🎯 全球直连`, `🇨🇳 中国代理`, and `🐟 漏网之鱼`. Same-side DNS as Muse/FlClash.
-- `flclash.yaml`: one Android FlClash profile. Switch `🎯 全球直连` and `🐟 漏网之鱼` by location;
-  NekoBox app groups plus ACL4SSR foreign/CN lists. DNS uses AliDNS on the CN side and
-  `--dns` / Cloudflare on the foreign side, each DoH URL bound to the matching group
-  (`#🎮 游戏`, `#🎯 全球直连`, `#🐟 漏网之鱼`, …) with `redir-host` + `respect-rules`.
+- `flclash.yaml`: one Android FlClash profile. Switch `🎯 全球直连` and `🐟 漏网之鱼` / `🎮 游戏` by location;
+  NekoBox app groups plus ACL4SSR foreign/CN lists. DNS uses AliDNS on the CN side (`🐟 漏网之鱼`,
+  `🎮 游戏`, `🛡️ 安全浏览`) and `--dns` / Cloudflare on the foreign side, each DoH URL bound to
+  the matching group (`#🎮 游戏`, `#🎯 全球直连`, `#🐟 漏网之鱼`, …) with `redir-host` + `respect-rules`.
 - `clash-backcn-muse.yaml`: one 5-group profile for both locations (no backcn/cnip split).
   `📺 YouTube`, `🎨 Muse`, `🎯 全球直连` (ACL4SSR GFW/media/Telegram), `🇨🇳 中国代理`, and
   `🐟 漏网之鱼`. Muse hosts come from `rules/muse.list`; other routing reuses `rules/` and
@@ -107,9 +107,9 @@ subscription.
 | `🔞 18` | `18comic.vip`, `hanime1.me` | US/PayPal node |
 | `🎬 missav` | `missav.ai`, `missav.ws` | JP/game node |
 | `🛡️ 安全浏览` | `browsercrp.vivo.com.cn` | usually `DIRECT` |
-| `🎮 游戏` | 原神 (`com.miHoYo.Yuanshen`) **and** hoyoverse/mihoyo suffixes | JP/game node |
-| `🇨🇦 北美` | Chase, Citi, Discover, Experian, T-Life, U.S. Bank, YouTube **app**, Muse, plus those banks' suffixes | CA/PayPal node |
-| `🎯 全球直连` | the NekoBox 绕过 apps (minus YouTube/T-Life/Muse) **and** ACL4SSR `ProxyGFWlist` / `ProxyMedia` / `Telegram` for the browser | `DIRECT` when abroad; an overseas node when in CN |
+| `🎮 游戏` | 原神 (`com.miHoYo.Yuanshen`) **and** hoyoverse/mihoyo suffixes | `DIRECT` when in CN; jpty1-game abroad (JP exit, lower latency to 国服 than naked JP) |
+| `🇨🇦 北美` | US banks, YouTube **app**, Muse, work/login apps (Authenticator, Okta Verify, Outlook, Slack, Zoom), plus matching suffixes (banks, Slack, Okta, Zoom, Entra/Outlook login hosts) | CA/PayPal node |
+| `🎯 全球直连` | the NekoBox 绕过 apps (minus YouTube/T-Life/Muse/work-login apps), Tailscale (`com.tailscale.ipn` plus `tailscale.com` / `tailscale.io`), **and** ACL4SSR `ProxyGFWlist` / `ProxyMedia` / `Telegram` for the browser | `DIRECT` when abroad; an overseas node when in CN |
 | `🐟 漏网之鱼` | CN lists, `redirect-to-cn`, `GEOIP,CN`, unmatched `MATCH` | China node when abroad; `DIRECT` when in CN |
 
 Rules are emitted in that order, so domain groups win over app groups. YouTube **app** still beats the later YouTube rule-set.
@@ -119,16 +119,21 @@ browser. `geolocation-!cn` is not used.
 
 DNS uses `redir-host` + `respect-rules`, with each DoH URL bound to its routing group
 (`https://…#🎮 游戏`, `#🇨🇦 北美`, `#🎯 全球直连`, `#🐟 漏网之鱼`, …). AliDNS
-(`https://223.5.5.5/dns-query`) for CN-side names (`🐟 漏网之鱼`, `🛡️ 安全浏览`, CN
+(`https://223.5.5.5/dns-query`) for CN-side names (`🐟 漏网之鱼`, `🎮 游戏`, `🛡️ 安全浏览`, CN
 rule-sets, `redirect-to-cn`) and `--dns` (Cloudflare if unset) for foreign-side names
-(`🎯 全球直连`, `🔞 18`, `🎬 missav`, `🇨🇦 北美`, `🎮 游戏`, GFW/media/Telegram/YouTube).
-A bare `https://1.1.1.1/dns-query` would itself match `MATCH,🐟 漏网之鱼`; in CN that
-group is `DIRECT`, so Cloudflare/NextDNS time out and 原神 login domains 500 even when
-`🎮 游戏` is on a JP node. The `#group` suffix forces the resolver dial onto the same
-exit as the connection. Node hostnames still use `system`. Inner DNS has no
+(`🎯 全球直连`, `🔞 18`, `🎬 missav`, `🇨🇦 北美`, GFW/media/Telegram/YouTube).
+`🎮 游戏` uses the same location switch as `🐟 漏网之鱼`: `DIRECT` in CN, a node abroad.
+Binding those domains to NextDNS/`#🎮 游戏` still times out when the group is `DIRECT`,
+so they stay on AliDNS. The `#group` suffix keeps that AliDNS dial on the same exit as
+the connection (DIRECT in CN; jpty1-game abroad). Node hostnames still use `system`. Inner DNS has no
 `PROCESS-NAME`, so 北美/游戏 company suffixes live in `policy-domains.list`. YouTube
 **app** traffic stays `🇨🇦 北美`; YouTube **DNS** follows the youtube rule-set
-(`🎯 全球直连`) — both foreign. Do not set `direct-nameserver: system` or DIRECT groups
+(`🎯 全球直连`) — both foreign. Slack / Okta / Zoom / Outlook / Entra suffixes
+share `🇨🇦 北美` with the apps so a browser SSO hop does not fall through to
+`🎯 全球直连` or `MATCH`. Tailscale control-plane suffixes share `🎯 全球直连`
+with the app; `ts.net` MagicDNS has no routing rule and uses `system` DNS
+(`+.ts.net`, same idea as `+.lan` / `+.local`) so unmatched names do not fall
+through to AliDNS / `🐟 漏网之鱼`. Do not set `direct-nameserver: system` or DIRECT groups
 would leak to the ISP resolver.
 
 Import `https://kbyshiyori.github.io/rulesv2/flclash.yaml`, **Rule** mode, enable process

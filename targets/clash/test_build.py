@@ -70,12 +70,41 @@ class BuildTests(unittest.TestCase):
         rules = [
             f"DOMAIN-SUFFIX,hoyoverse.com,{build.GROUP_GAME}",
             f"DOMAIN-SUFFIX,chase.com,{build.GROUP_NA}",
+            f"DOMAIN-SUFFIX,tailscale.com,{build.GROUP_GLOBAL}",
             f"DOMAIN-SUFFIX,18comic.vip,{build.GROUP_18}",
         ]
         self.assertEqual(
             build.game_domain_rules(rules),
             [f"DOMAIN-SUFFIX,hoyoverse.com,{build.GROUP_GAME}"],
         )
+
+    def test_hako_ignores_android_apps_and_flclash_policy_domains(self) -> None:
+        root = Path(__file__).resolve().parents[2]
+        apps = build.load_android_apps(str(root / "rules" / "android-apps.list"))
+        policy_domains = build.load_policy_domains(
+            str(root / "rules" / "policy-domains.list")
+        )
+        baseline = build.render(
+            "backcn", ["xiaohongshu.com"], [], "https://dns.example/dns-query"
+        )
+        with_lists = build.render(
+            "backcn",
+            ["xiaohongshu.com"],
+            [],
+            "https://dns.example/dns-query",
+            "hako",
+            apps,
+            policy_domains,
+        )
+        self.assertEqual(baseline, with_lists)
+        self.assertNotIn("PROCESS-NAME,com.Slack", with_lists)
+        self.assertNotIn("PROCESS-NAME,com.tailscale.ipn", with_lists)
+        self.assertNotIn("PROCESS-NAME,us.zoom.videomeetings", with_lists)
+        self.assertNotIn(f"DOMAIN-SUFFIX,okta.com,{build.GROUP_NA}", with_lists)
+        self.assertNotIn(f"DOMAIN-SUFFIX,slack.com,{build.GROUP_NA}", with_lists)
+        self.assertNotIn(f"DOMAIN-SUFFIX,tailscale.com,{build.GROUP_GLOBAL}", with_lists)
+        self.assertNotIn(f"  - name: \"{build.GROUP_NA}\"", with_lists)
+        self.assertNotIn('"+.ts.net"', with_lists)
 
     def test_verge_is_a_six_group_universal_profile(self) -> None:
         root = Path(__file__).resolve().parents[2]
@@ -104,6 +133,14 @@ class BuildTests(unittest.TestCase):
         self.assertNotIn(f"  - name: \"{build.GROUP_18}\"", text)
         self.assertNotIn(f"  - name: \"{build.GROUP_NA}\"", text)
         self.assertNotIn(f"DOMAIN-SUFFIX,chase.com,{build.GROUP_NA}", text)
+        self.assertNotIn(f"DOMAIN-SUFFIX,okta.com,{build.GROUP_NA}", text)
+        self.assertNotIn(f"DOMAIN-SUFFIX,slack.com,{build.GROUP_NA}", text)
+        self.assertNotIn(f"DOMAIN-SUFFIX,zoom.us,{build.GROUP_NA}", text)
+        self.assertNotIn(f"DOMAIN-SUFFIX,tailscale.com,{build.GROUP_GLOBAL}", text)
+        self.assertNotIn("PROCESS-NAME,com.Slack", text)
+        self.assertNotIn("PROCESS-NAME,com.tailscale.ipn", text)
+        self.assertNotIn("PROCESS-NAME,us.zoom.videomeetings", text)
+        self.assertNotIn('"+.ts.net"', text)
         self.assertNotIn(f"DOMAIN-SUFFIX,18comic.vip,{build.GROUP_18}", text)
         group_block = text.split("proxy-groups:\n", 1)[1].split("rule-providers:", 1)[0]
         self.assertEqual(group_block.count("  - name:"), len(build.VERGE_SELECT_GROUPS) + 1)
@@ -191,15 +228,19 @@ class BuildTests(unittest.TestCase):
                 },
             )
 
-    def test_flclash_resolver_binds_foreign_doh_to_the_policy_group(self) -> None:
+    def test_flclash_resolver_binds_cn_side_groups_to_alidns(self) -> None:
         foreign = "https://dns.example/dns-query"
         self.assertEqual(
             build._flclash_resolver(build.GROUP_GAME, foreign),
-            f'"{foreign}#{build.GROUP_GAME}"',
+            f'"{build.CN_DNS}#{build.GROUP_GAME}"',
         )
         self.assertEqual(
             build._flclash_resolver(build.GROUP_FINAL, foreign),
             f'"{build.CN_DNS}#{build.GROUP_FINAL}"',
+        )
+        self.assertEqual(
+            build._flclash_resolver(build.GROUP_NA, foreign),
+            f'"{foreign}#{build.GROUP_NA}"',
         )
         self.assertEqual(build._flclash_resolver("DIRECT", foreign), "system")
         self.assertEqual(build._flclash_resolver("REJECT", foreign), "system")
@@ -223,6 +264,10 @@ class BuildTests(unittest.TestCase):
         self.assertIn("enhanced-mode: redir-host", text)
         self.assertIn("respect-rules: true", text)
         self.assertIn("nameserver-policy:", text)
+        self.assertIn('    "+.lan": system', text)
+        self.assertIn('    "+.local": system', text)
+        self.assertIn('    "+.ts.net": system', text)
+        self.assertNotIn("DOMAIN-SUFFIX,ts.net,", text)
         self.assertIn(
             f'    - "https://223.5.5.5/dns-query#{build.GROUP_FINAL}"',
             text,
@@ -249,11 +294,23 @@ class BuildTests(unittest.TestCase):
             text,
         )
         self.assertIn(
-            f'    "+.hoyoverse.com": "https://dns.example/dns-query#{build.GROUP_GAME}"',
+            f'    "+.okta.com": "https://dns.example/dns-query#{build.GROUP_NA}"',
             text,
         )
         self.assertIn(
-            f'    "+.mihoyo.com": "https://dns.example/dns-query#{build.GROUP_GAME}"',
+            f'    "+.login.microsoft.com": "https://dns.example/dns-query#{build.GROUP_NA}"',
+            text,
+        )
+        self.assertIn(
+            f'    "+.tailscale.com": "https://dns.example/dns-query#{build.GROUP_GLOBAL}"',
+            text,
+        )
+        self.assertIn(
+            f'    "+.hoyoverse.com": "https://223.5.5.5/dns-query#{build.GROUP_GAME}"',
+            text,
+        )
+        self.assertIn(
+            f'    "+.mihoyo.com": "https://223.5.5.5/dns-query#{build.GROUP_GAME}"',
             text,
         )
         self.assertIn(
@@ -282,6 +339,10 @@ class BuildTests(unittest.TestCase):
             default_dns,
         )
         self.assertIn(
+            f'    "+.hoyoverse.com": "https://223.5.5.5/dns-query#{build.GROUP_GAME}"',
+            default_dns,
+        )
+        self.assertNotIn(
             f'    "+.hoyoverse.com": "https://1.1.1.1/dns-query#{build.GROUP_GAME}"',
             default_dns,
         )
@@ -292,6 +353,18 @@ class BuildTests(unittest.TestCase):
         self.assertNotIn(f"PROCESS-NAME,com.google.android.youtube,{build.GROUP_GLOBAL}", text)
         self.assertIn(f"PROCESS-NAME,com.facebook.aura,{build.GROUP_NA}", text)
         self.assertNotIn(f"PROCESS-NAME,com.facebook.aura,{build.GROUP_GLOBAL}", text)
+        self.assertIn(f"PROCESS-NAME,com.azure.authenticator,{build.GROUP_NA}", text)
+        self.assertNotIn(f"PROCESS-NAME,com.azure.authenticator,{build.GROUP_GLOBAL}", text)
+        self.assertIn(f"PROCESS-NAME,com.okta.android.auth,{build.GROUP_NA}", text)
+        self.assertNotIn(f"PROCESS-NAME,com.okta.android.auth,{build.GROUP_GLOBAL}", text)
+        self.assertIn(f"PROCESS-NAME,com.microsoft.office.outlook,{build.GROUP_NA}", text)
+        self.assertNotIn(f"PROCESS-NAME,com.microsoft.office.outlook,{build.GROUP_GLOBAL}", text)
+        self.assertIn(f"PROCESS-NAME,com.Slack,{build.GROUP_NA}", text)
+        self.assertNotIn(f"PROCESS-NAME,com.Slack,{build.GROUP_GLOBAL}", text)
+        self.assertIn(f"PROCESS-NAME,com.tailscale.ipn,{build.GROUP_GLOBAL}", text)
+        self.assertNotIn(f"PROCESS-NAME,com.tailscale.ipn,{build.GROUP_NA}", text)
+        self.assertIn(f"PROCESS-NAME,us.zoom.videomeetings,{build.GROUP_NA}", text)
+        self.assertNotIn(f"PROCESS-NAME,us.zoom.videomeetings,{build.GROUP_GLOBAL}", text)
         self.assertIn(f"PROCESS-NAME,com.reddit.frontpage,{build.GROUP_GLOBAL}", text)
         self.assertIn(f"PROCESS-NAME,jp.co.softbank.OfficialApp,{build.GROUP_GLOBAL}", text)
         self.assertIn("PROCESS-NAME,com.follow.clash,DIRECT", text)
@@ -300,6 +373,16 @@ class BuildTests(unittest.TestCase):
         self.assertIn(f"DOMAIN-SUFFIX,missav.ai,{build.GROUP_MISSAV}", text)
         self.assertIn(f"DOMAIN-SUFFIX,browsercrp.vivo.com.cn,{build.GROUP_SAFE}", text)
         self.assertIn(f"DOMAIN-SUFFIX,chase.com,{build.GROUP_NA}", text)
+        self.assertIn(f"DOMAIN-SUFFIX,okta.com,{build.GROUP_NA}", text)
+        self.assertIn(f"DOMAIN-SUFFIX,login.microsoft.com,{build.GROUP_NA}", text)
+        self.assertIn(f"DOMAIN-SUFFIX,microsoftonline.com,{build.GROUP_NA}", text)
+        self.assertIn(f"DOMAIN-SUFFIX,slack.com,{build.GROUP_NA}", text)
+        self.assertIn(f"DOMAIN-SUFFIX,zoom.us,{build.GROUP_NA}", text)
+        self.assertIn(f"DOMAIN-SUFFIX,tailscale.com,{build.GROUP_GLOBAL}", text)
+        self.assertNotIn(f"DOMAIN-SUFFIX,tailscale.com,{build.GROUP_NA}", text)
+        self.assertNotIn(f"DOMAIN-SUFFIX,ts.net,{build.GROUP_NA}", text)
+        self.assertNotIn(f"DOMAIN-SUFFIX,ts.net,{build.GROUP_GLOBAL}", text)
+        self.assertIn(f"DOMAIN-SUFFIX,outlook.com,{build.GROUP_NA}", text)
         self.assertIn(f"DOMAIN-SUFFIX,hoyoverse.com,{build.GROUP_GAME}", text)
         self.assertNotIn(f"DOMAIN-SUFFIX,18comic.vip,{build.GROUP_NA}", text)
         self.assertNotIn(f"DOMAIN-SUFFIX,missav.ai,{build.GROUP_GAME}", text)
