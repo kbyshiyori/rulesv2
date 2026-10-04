@@ -366,6 +366,7 @@ class BuildTests(unittest.TestCase):
         self.assertIn(f"PROCESS-NAME,us.zoom.videomeetings,{build.GROUP_NA}", text)
         self.assertNotIn(f"PROCESS-NAME,us.zoom.videomeetings,{build.GROUP_GLOBAL}", text)
         self.assertIn(f"PROCESS-NAME,com.reddit.frontpage,{build.GROUP_GLOBAL}", text)
+        self.assertIn(f"PROCESS-NAME,jp.co.softbank.OfficialApp,{build.GROUP_GLOBAL}", text)
         self.assertIn("PROCESS-NAME,com.follow.clash,DIRECT", text)
         self.assertNotIn(f"PROCESS-NAME,com.follow.clash,{build.GROUP_GLOBAL}", text)
         self.assertIn(f"DOMAIN-SUFFIX,18comic.vip,{build.GROUP_18}", text)
