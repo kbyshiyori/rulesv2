@@ -18,44 +18,43 @@ iPhone 与 MacBook 的 IPv6 跟随各自公共主配置。Windows、AVP 尚未�
 
 ## 接手时先读这里
 
-仓库根目录的两个 gitignored 文件是现有机器的凭据入口：
+凭据分为每个 agent 的发布权限和 Drive 共享的设备订阅登记：
 
-- `.env.cloudflare`：`CLOUDFLARE_API_TOKEN`，发布权限为当前账户的
-  Workers Scripts Write / Edit。该权限覆盖账户内 Worker 脚本，不仅限一个 Worker。
+- 每个 agent 的 Secret：`CLOUDFLARE_API_TOKEN`，运行时注入同名环境变量。
+  发布权限为当前账户的 Workers Scripts Write / Edit，覆盖账户内 Worker 脚本。
+  不上传到 Google Drive。本机 gitignored `.env.cloudflare` 仅作为已有兼容入口。
 - `.env.subscriptions`：账户 ID、Worker 名称、服务根地址，以及现有
   `ANDROID_SUBSCRIPTION_TOKEN`、`IPHONE_SUBSCRIPTION_TOKEN`、`MACBOOK_SUBSCRIPTION_TOKEN`。
 
-### Google Drive 共享凭据入口
+### Google Drive 共享设备令牌入口
 
 所有者已授权 agent 使用 Google Drive 插件连接的账号，在 `Agents/cloudflare` 中
-读取和更新共享凭据文件，以便其他 agent 接手。使用插件账号，不要根据浏览器当前
-登录账号判断目标 Drive。
+读取和更新 `.env.subscriptions`，以便其他 agent 接手。使用插件账号，不要根据
+浏览器当前登录账号判断目标 Drive。
 
 - 账号：`larry@kbyshiyori.com`。
 - 文件夹：[Agents/cloudflare](https://drive.google.com/drive/folders/1x-bA2cLZEgVuNoY5jeekBA9COmYl9oxJ)。
-- 已上传：[.env.cloudflare](https://drive.google.com/file/d/10RMt9Yns1kj_b9sbS_5vswvx6CRN67N9/view)，
-  只含 Cloudflare API 凭据；当前未上传 `.env.subscriptions`。
+- 已上传：[.env.subscriptions](https://drive.google.com/file/d/1G611K5fTWWEQsJYglO-Cju8I6uhx54FR/view)，
+  包含账户 ID、Worker 名称、服务根地址，以及三个现有设备的订阅令牌。
+- 误上传的 `.env.cloudflare` 已从 Drive 删除。API Token 由所有者配置到每个 agent 的
+  Secret，不从共享 Drive 获取，也不写入 `.env.subscriptions`。
 
-agent 可直接修改该文件夹内与本项目相关的共享凭据文件，不必仅为写回文件再次确认。
+agent 可直接修改本项目的共享设备登记，不必仅为写回文件再次确认。
 此授权不包括扩大 Drive 共享权限、公开文件、增加 API Token 权限，或自行删除在用设备。
-读取前确认插件账号及文件父目录，下载到仓库根目录的 gitignored 文件并设置 0600；
-不要打印文件内容。Cloudflare 节点配置仍以云端 JSON 变量为准。
+读取前确认插件账号及文件父目录，下载到仓库根目录 gitignored `.env.subscriptions`
+并设置 0600；不要打印内容。节点配置仍以 Cloudflare JSON 变量为准。
 
 更新已有 Drive 文件用 `update_file` 上传新内容并保留文件 ID、父目录和权限，
 不要用 `upload_file` 生成同名重复文件。修改前重新读取共享文件、保留无关字段，
-写回后读取元数据及文件核对结果；同一时间仅安排一个凭据维护者。
-API Token 更换时同步 `.env.cloudflare`。设备增删涉及的令牌登记在 `.env.subscriptions`，
-不能写进只存 API 凭据的 `.env.cloudflare`。
-
-需要共享设备订阅令牌时，可按所有者要求首次将 `.env.subscriptions` 放入同一文件夹，
-之后 agent 新增或删除设备时直接更新这份共享登记，并同步本机副本。
-当前它尚未在 Drive 中，接手时必须从所有者取得现有令牌；不得假定 Drive 备份已完整。
-共享文件不是自动同步服务，上传本身不会部署 Worker。
+写回后读取元数据及文件核对结果；同一时间仅安排一个登记维护者。
+新增或删除设备时直接更新这份共享登记，并同步本机副本；已有设备令牌保持不变。
+API Token 的更换在各 agent 的 Secret 中完成。共享文件不是自动同步服务，
+上传本身不会部署 Worker。
 
 可以用 `subscriptions/.env.example` 在新环境准备第二个文件，但必须从所有者或
-可信凭据管理器取得**现有**订阅令牌。API Token 可以重新授权；设备令牌不得随意重建，
+上述 Drive 共享文件取得**现有**订阅令牌。API Token 可以重新授权；设备令牌不得随意重建，
 否则现有手机订阅会失效。Worker 只保存其 SHA-256 哈希，不能从 Worker 还原原始令牌。
-两个文件都应为 0600。不要在日志、聊天、公开 PR 或源码中打印 Token、私密 URL 或完整节点。
+本机凭据文件都应为 0600。不要在日志、聊天、公开 PR 或源码中打印 Token、私密 URL 或完整节点。
 
 新 agent 所需工具：Python 3.12、Ruby/Psych（解析并校验 YAML，macOS 自带），
 修改 Worker 时还需 Node.js 22 或更新版本。Python 发布器只用标准库。
@@ -97,8 +96,8 @@ preview URLs。订阅 URL 仍是一项读取凭据；浏览器历史、手机配
 
 Worker → Settings → Runtime variables and secrets 中，三个 `*_CONFIG` 的类型是 JSON。
 普通 JSON 变量可以在后台及已授权的 Cloudflare API 中读取；不会因为改为 JSON 而
-通过未鉴权的订阅请求公开。读取订阅仍需原有设备令牌，原始令牌仍只保存在本地。
-Cloudflare API Token 继续保存在本地 `.env.cloudflare`，不放入运行时变量。
+通过未鉴权的订阅请求公开。读取订阅仍需原有设备令牌，原始令牌保存在私密 Drive 登记及本机副本。
+Cloudflare API Token 由各 agent 的 Secret 注入环境变量，不放入运行时变量或 Drive。
 
 配置对象含两个字段：`tokenHash`（现有订阅令牌的 SHA-256）与 `provider`（节点 YAML 字符串）。
 修改节点时编辑 `provider`，保留 `tokenHash`。JSON 字符串内的换行表示为 `\n`，
@@ -166,15 +165,15 @@ python3.12 subscriptions/publish.py --device iphone --bootstrap --provider /priv
 
 ### 增加设备
 
-1. 从 Cloudflare 读取现有配置；从 Drive 取得 API 凭据和已存在的共享设备登记。
+1. 从 Cloudflare 读取现有配置；从 agent Secret 取得 API 凭据，从 Drive 下载最新的共享设备登记。
    保留所有其他设备的令牌和配置。
 2. 对新的设备名称，修改 `worker.mjs` 的设备映射与路由允许列表，以及 `publish.py`
    的 `DEVICES`、环境变量示例、测试和本文设备表。公共规则复用现有 Pages 配置；
    需要新平台时先完成相应公共构建。
 3. 使用该设备的 `--bootstrap --provider`，只为新设备生成令牌，上传 JSON 变量并
    验证完整配置、节点、鉴权及其他设备订阅。已有设备禁止重新 bootstrap。
-4. 如 Drive 中已有 `.env.subscriptions`，将新增的 `<DEVICE>_SUBSCRIPTION_TOKEN`
-   合并写回原文件；不存在时按所有者要求建立共享登记。核对原有令牌未改变，
+4. 将新增的 `<DEVICE>_SUBSCRIPTION_TOKEN` 合并写回 Drive 的原 `.env.subscriptions`
+   文件。核对原有令牌未改变，
    提供私密完整订阅地址，提交公开代码与文档改动。
 
 ### 删除设备
@@ -185,8 +184,8 @@ python3.12 subscriptions/publish.py --device iphone --bootstrap --provider /priv
    当前部署器会拒绝未知 binding；必须为移除操作设计明确的处理，不能通过忽略检查
    或用一个缺少其他设备 binding 的上传来删除设备。
 3. 验证已删除设备的原 provider/config URL 返回 404，剩余设备正常。
-   再从本机及 Drive 中已有的 `.env.subscriptions` 移除该设备令牌条目，保留其他字段。
-   `.env.cloudflare` 通常无需变化，因为 API 凭据按账户管理。
+   再从本机及 Drive 中的 `.env.subscriptions` 移除该设备令牌条目，保留其他字段。
+   每个 agent 的 Cloudflare API Secret 通常无需变化，因为发布权限按账户管理。
 4. 正常更新原共享文件即可；保留恢复备份，不顺带删除 Drive 文件夹或其他设备文件。
    旧 Worker 版本/私密备份可能仍含旧凭据，回滚时应核对停用设备不会被重新启用。
 

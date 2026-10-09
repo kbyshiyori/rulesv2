@@ -10,8 +10,9 @@ Read `README.md` here before changing or deploying subscriptions.
   does not read a stale node working copy.
 - Respect baseline conflicts and local uncommitted edits. The check is optimistic,
   not atomic: one publisher at a time. Do not add an automatic force/rotation path.
-- Credentials are in root `.env.cloudflare` and `.env.subscriptions`, not this source
-  directory. Never print secrets, complete provider content, or private subscription
+- API credentials come from each agent's Secret as CLOUDFLARE_API_TOKEN (legacy local
+  `.env.cloudflare` fallback supported). Device tokens are in ignored root
+  `.env.subscriptions`, downloaded from the private Drive registry. Never print secrets, complete provider content, or private subscription
   URLs. Missing device tokens require recovery of the existing token.
 - Public rules come from the fixed rulesv2 Pages URL. Full subscriptions use
   `config.yaml`; `provider.yaml` contains nodes only. Preserve Android IPv6-off policy.
@@ -30,14 +31,14 @@ Read `README.md` here before changing or deploying subscriptions.
 - Publish CONFIG as `type: json`, preserve other device bindings via inherit. Worker
   accepts native JSON objects and legacy string bindings during migration.
 
-- Shared API credentials are in Google Drive `Agents/cloudflare/.env.cloudflare`
+- The shared device registry is Google Drive `Agents/cloudflare/.env.subscriptions`
   under the plugin account larry@kbyshiyori.com. See README for verified folder/file
-  links. The owner authorizes agents to update this project's shared credential
-  files in place, preserving IDs, parents and permissions. Do not create duplicate
-  files or widen sharing. Read fresh content, merge, and verify the write.
-- `.env.subscriptions` is not currently uploaded to Drive. Do not claim device
-  tokens are available there. When the owner requests sharing that registry, keep
-  device additions/removals synchronized in the original Drive file and local copy.
+  links. The owner authorizes agents to update this registry in place, preserving
+  IDs, parents and permissions. Do not create duplicates or widen sharing. Read
+  fresh content, merge requested device changes, and verify the write.
+- Never upload Cloudflare API credentials to Drive. The mistakenly uploaded API
+  file has been removed; each agent receives its own Secret. Preserve existing
+  device tokens when updating the shared registry and local copy.
 - Device changes need Worker/publisher mappings, deployment and live verification;
   editing Drive credentials alone does not change subscriptions. There is no delete
   CLI. Remove only a user-requested device and preserve all others; see README.

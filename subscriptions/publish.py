@@ -247,7 +247,7 @@ def deploy(account, worker, token, provider):
     cf = read_env(ROOT / '.env.cloudflare')
     api_token = os.environ.get('CLOUDFLARE_API_TOKEN') or cf.get('CLOUDFLARE_API_TOKEN')
     if not api_token:
-        raise ValueError('Save CLOUDFLARE_API_TOKEN in .env.cloudflare before publishing')
+        raise ValueError('Provide CLOUDFLARE_API_TOKEN through the agent Secret/environment before publishing')
     existing = api(api_token, f'accounts/{account}/workers/scripts/{worker}/settings').get('bindings', [])
     config = json.dumps({'tokenHash': digest(token), 'provider': provider})
     metadata = {
