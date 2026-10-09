@@ -322,7 +322,7 @@ class BuildTests(unittest.TestCase):
             f'    "+.icloud.com": "https://dns.example/dns-query#{build.GROUP_GLOBAL}"',
             text,
         )
-        self.assertIn(
+        self.assertNotIn(
             f'    "+.icloud.com.cn": "https://dns.example/dns-query#{build.GROUP_GLOBAL}"',
             text,
         )
@@ -413,8 +413,9 @@ class BuildTests(unittest.TestCase):
         self.assertIn(f"DOMAIN-SUFFIX,apple-cloudkit.com,{build.GROUP_GLOBAL}", text)
         self.assertIn(f"DOMAIN-SUFFIX,me.com,{build.GROUP_GLOBAL}", text)
         self.assertIn(f"DOMAIN-SUFFIX,mac.com,{build.GROUP_GLOBAL}", text)
-        self.assertIn(f"DOMAIN-SUFFIX,icloud.com.cn,{build.GROUP_GLOBAL}", text)
         self.assertIn(f"DOMAIN-SUFFIX,apple-dns.net,{build.GROUP_GLOBAL}", text)
+        self.assertNotIn(f"DOMAIN-SUFFIX,icloud.com.cn,{build.GROUP_GLOBAL}", text)
+        self.assertNotIn(f"DOMAIN-SUFFIX,icloud.cn,{build.GROUP_GLOBAL}", text)
         self.assertNotIn(f"DOMAIN-SUFFIX,ts.net,{build.GROUP_NA}", text)
         self.assertNotIn(f"DOMAIN-SUFFIX,ts.net,{build.GROUP_GLOBAL}", text)
         self.assertIn(f"DOMAIN-SUFFIX,outlook.com,{build.GROUP_NA}", text)

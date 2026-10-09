@@ -15,8 +15,8 @@
 # control-plane suffixes go to 🎯 全球直连; ts.net MagicDNS is omitted from
 # routing so FlClash does not steal tailnet hostnames. Claude and Grok
 # suffixes cover the same inner-DNS / browser-hop case for those apps.
-# iCloud suffixes (including the China aliases) stay on 🎯 全球直连 so the
-# CN domain list cannot send them to 🐟 漏网之鱼.
+# International iCloud suffixes stay on 🎯 全球直连. China aliases
+# (icloud.com.cn and the other *.cn names) are omitted.
 
 domain-suffix,18comic.vip,🔞 18
 domain-suffix,hanime1.me,🔞 18
@@ -71,11 +71,3 @@ domain-suffix,apple-livephotoskit.com,🎯 全球直连
 domain-suffix,me.com,🎯 全球直连
 domain-suffix,mac.com,🎯 全球直连
 domain-suffix,apple-dns.net,🎯 全球直连
-domain-suffix,icloud.com.cn,🎯 全球直连
-domain-suffix,icloud-content.com.cn,🎯 全球直连
-domain-suffix,icloud.cn,🎯 全球直连
-domain-suffix,icloud.net.cn,🎯 全球直连
-domain-suffix,apple-icloud.cn,🎯 全球直连
-domain-suffix,appleicloud.cn,🎯 全球直连
-domain-suffix,icloud-apple.cn,🎯 全球直连
-domain-suffix,icloudapple.cn,🎯 全球直连
