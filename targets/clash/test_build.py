@@ -139,6 +139,7 @@ class BuildTests(unittest.TestCase):
         self.assertNotIn(f"DOMAIN-SUFFIX,tailscale.com,{build.GROUP_GLOBAL}", text)
         self.assertNotIn(f"DOMAIN-SUFFIX,claude.ai,{build.GROUP_GLOBAL}", text)
         self.assertNotIn(f"DOMAIN-SUFFIX,grok.com,{build.GROUP_GLOBAL}", text)
+        self.assertNotIn(f"DOMAIN-SUFFIX,icloud.com,{build.GROUP_GLOBAL}", text)
         self.assertNotIn("PROCESS-NAME,com.Slack", text)
         self.assertNotIn("PROCESS-NAME,com.tailscale.ipn", text)
         self.assertNotIn("PROCESS-NAME,com.anthropic.claude", text)
@@ -318,6 +319,14 @@ class BuildTests(unittest.TestCase):
             text,
         )
         self.assertIn(
+            f'    "+.icloud.com": "https://dns.example/dns-query#{build.GROUP_GLOBAL}"',
+            text,
+        )
+        self.assertIn(
+            f'    "+.icloud.com.cn": "https://dns.example/dns-query#{build.GROUP_GLOBAL}"',
+            text,
+        )
+        self.assertIn(
             f'    "+.hoyoverse.com": "https://223.5.5.5/dns-query#{build.GROUP_GAME}"',
             text,
         )
@@ -399,6 +408,13 @@ class BuildTests(unittest.TestCase):
         self.assertIn(f"DOMAIN-SUFFIX,claudeusercontent.com,{build.GROUP_GLOBAL}", text)
         self.assertIn(f"DOMAIN-SUFFIX,grok.com,{build.GROUP_GLOBAL}", text)
         self.assertIn(f"DOMAIN-SUFFIX,x.ai,{build.GROUP_GLOBAL}", text)
+        self.assertIn(f"DOMAIN-SUFFIX,icloud.com,{build.GROUP_GLOBAL}", text)
+        self.assertIn(f"DOMAIN-SUFFIX,icloud-content.com,{build.GROUP_GLOBAL}", text)
+        self.assertIn(f"DOMAIN-SUFFIX,apple-cloudkit.com,{build.GROUP_GLOBAL}", text)
+        self.assertIn(f"DOMAIN-SUFFIX,me.com,{build.GROUP_GLOBAL}", text)
+        self.assertIn(f"DOMAIN-SUFFIX,mac.com,{build.GROUP_GLOBAL}", text)
+        self.assertIn(f"DOMAIN-SUFFIX,icloud.com.cn,{build.GROUP_GLOBAL}", text)
+        self.assertIn(f"DOMAIN-SUFFIX,apple-dns.net,{build.GROUP_GLOBAL}", text)
         self.assertNotIn(f"DOMAIN-SUFFIX,ts.net,{build.GROUP_NA}", text)
         self.assertNotIn(f"DOMAIN-SUFFIX,ts.net,{build.GROUP_GLOBAL}", text)
         self.assertIn(f"DOMAIN-SUFFIX,outlook.com,{build.GROUP_NA}", text)
