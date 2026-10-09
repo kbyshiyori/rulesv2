@@ -1,5 +1,5 @@
 {
   "name": "rulesv2",
   "user": "ubuntu",
-  "install": "set -eu; command -v python >/dev/null 2>&1 || sudo ln -sf \"$(command -v python3)\" /usr/local/bin/python; python --version; python -m py_compile targets/shadowrocket/build.py targets/clash/build.py"
+  "install": "set -eu\ncommand -v python >/dev/null 2>&1 || sudo ln -sf \"$(command -v python3)\" /usr/local/bin/python\npython --version\nif ! ruby -ryaml -e 'YAML' >/dev/null 2>&1; then\n  sudo apt-get update\n  sudo DEBIAN_FRONTEND=noninteractive apt-get install -y ruby\nfi\nruby --version\nruby -ryaml -e 'YAML.load(\"a: 1\\n\")'\npython -m py_compile targets/shadowrocket/build.py targets/clash/build.py\n"
 }
