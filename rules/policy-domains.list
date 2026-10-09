@@ -13,7 +13,8 @@
 # Zoom suffixes are listed because those apps hop to the system browser
 # (Entra / Okta SSO) and because inner DNS has no PROCESS-NAME. Tailscale
 # control-plane suffixes go to 🎯 全球直连; ts.net MagicDNS is omitted from
-# routing so FlClash does not steal tailnet hostnames.
+# routing so FlClash does not steal tailnet hostnames. Claude and Grok
+# suffixes cover the same inner-DNS / browser-hop case for those apps.
 
 domain-suffix,18comic.vip,🔞 18
 domain-suffix,hanime1.me,🔞 18
@@ -52,3 +53,8 @@ domain-suffix,tailscale.io,🎯 全球直连
 # ts.net is MagicDNS (host.tailnet.ts.net). Do not add a routing suffix here —
 # FlClash pins +.ts.net to system DNS in the emitter so AliDNS/漏网之鱼 does
 # not steal tailnet hostnames.
+domain-suffix,claude.ai,🎯 全球直连
+domain-suffix,anthropic.com,🎯 全球直连
+domain-suffix,claudeusercontent.com,🎯 全球直连
+domain-suffix,grok.com,🎯 全球直连
+domain-suffix,x.ai,🎯 全球直连

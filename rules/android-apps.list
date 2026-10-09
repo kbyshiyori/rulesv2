@@ -10,10 +10,10 @@
 # First group wins if a package appears twice. YouTube and T-Life are 北美-only
 # because that rule was above 绕过app on the phone. Muse and the work/login
 # apps (Authenticator, Okta Verify, Outlook, Slack, Zoom) were moved to 北美.
-# Tailscale stays on 🎯 全球直连 with its control-plane suffixes. Matching
-# suffixes live in policy-domains.list so browser SSO hops and inner DNS
-# follow the same group. com.follow.clash is omitted here; the emitter
-# always pins it to DIRECT.
+# Tailscale stays on 🎯 全球直连 with its control-plane suffixes. Claude and
+# Grok do the same. Matching suffixes live in policy-domains.list so browser
+# hops and inner DNS follow the same group. com.follow.clash is omitted here;
+# the emitter always pins it to DIRECT.
 
 # 北美app
 🇨🇦 北美,com.chase.sig.android,Chase
@@ -59,3 +59,5 @@
 🎯 全球直连,com.tailscale.ipn,Tailscale
 🎯 全球直连,com.kddi.kdla.jp,povo2.0
 🎯 全球直连,com.samsung.android.app.watchmanager,三星智能穿戴
+🎯 全球直连,com.anthropic.claude,Claude
+🎯 全球直连,ai.x.grok,Grok
