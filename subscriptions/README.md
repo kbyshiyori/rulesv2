@@ -25,6 +25,33 @@ iPhone 与 MacBook 的 IPv6 跟随各自公共主配置。Windows、AVP 尚未�
 - `.env.subscriptions`：账户 ID、Worker 名称、服务根地址，以及现有
   `ANDROID_SUBSCRIPTION_TOKEN`、`IPHONE_SUBSCRIPTION_TOKEN`、`MACBOOK_SUBSCRIPTION_TOKEN`。
 
+### Google Drive 共享凭据入口
+
+所有者已授权 agent 使用 Google Drive 插件连接的账号，在 `Agents/cloudflare` 中
+读取和更新共享凭据文件，以便其他 agent 接手。使用插件账号，不要根据浏览器当前
+登录账号判断目标 Drive。
+
+- 账号：`larry@kbyshiyori.com`。
+- 文件夹：[Agents/cloudflare](https://drive.google.com/drive/folders/1x-bA2cLZEgVuNoY5jeekBA9COmYl9oxJ)。
+- 已上传：[.env.cloudflare](https://drive.google.com/file/d/10RMt9Yns1kj_b9sbS_5vswvx6CRN67N9/view)，
+  只含 Cloudflare API 凭据；当前未上传 `.env.subscriptions`。
+
+agent 可直接修改该文件夹内与本项目相关的共享凭据文件，不必仅为写回文件再次确认。
+此授权不包括扩大 Drive 共享权限、公开文件、增加 API Token 权限，或自行删除在用设备。
+读取前确认插件账号及文件父目录，下载到仓库根目录的 gitignored 文件并设置 0600；
+不要打印文件内容。Cloudflare 节点配置仍以云端 JSON 变量为准。
+
+更新已有 Drive 文件用 `update_file` 上传新内容并保留文件 ID、父目录和权限，
+不要用 `upload_file` 生成同名重复文件。修改前重新读取共享文件、保留无关字段，
+写回后读取元数据及文件核对结果；同一时间仅安排一个凭据维护者。
+API Token 更换时同步 `.env.cloudflare`。设备增删涉及的令牌登记在 `.env.subscriptions`，
+不能写进只存 API 凭据的 `.env.cloudflare`。
+
+需要共享设备订阅令牌时，可按所有者要求首次将 `.env.subscriptions` 放入同一文件夹，
+之后 agent 新增或删除设备时直接更新这份共享登记，并同步本机副本。
+当前它尚未在 Drive 中，接手时必须从所有者取得现有令牌；不得假定 Drive 备份已完整。
+共享文件不是自动同步服务，上传本身不会部署 Worker。
+
 可以用 `subscriptions/.env.example` 在新环境准备第二个文件，但必须从所有者或
 可信凭据管理器取得**现有**订阅令牌。API Token 可以重新授权；设备令牌不得随意重建，
 否则现有手机订阅会失效。Worker 只保存其 SHA-256 哈希，不能从 Worker 还原原始令牌。
@@ -46,7 +73,7 @@ iPhone 与 MacBook 的 IPv6 跟随各自公共主配置。Windows、AVP 尚未�
 | `/<device>/config.yaml` | 同完整配置 | 请求头 `Authorization: Bearer <token>` |
 | `/<device>/provider.yaml` | 同节点 | agent 下载时使用请求头认证 |
 
-所有入口都鉴权，错误令牌返回 404，缺少配置变量 返回 503。完整配置仅从固定的
+所有入口都鉴权，错误令牌返回 404，缺少配置变量返回 503。完整配置仅从固定的
 GitHub Pages 地址抓取规则，不向 GitHub 发送设备令牌，也不跟随重定向。
 规则源不可达、返回错误或格式不兼容时，完整配置返回 502；节点订阅仍独立工作。
 
@@ -96,7 +123,7 @@ python3.12 subscriptions/publish.py --publish
 文件不会打印到终端。
 
 `--publish` 校验 YAML、节点名称唯一性，读取当前云端节点并比对下载基线，备份发布前的
-云端节点，然后将 Worker 模块与选定设备的 JSON 变量一起上传。其他已部署设备的配置变量 通过 `inherit` binding 保留；
+云端节点，然后将 Worker 模块与选定设备的 JSON 变量一起上传。其他已部署设备的配置变量通过 `inherit` binding 保留；
 遇到不认识的 binding 会拒绝部署，防止误删。
 发布后核对云端与本地节点字节一致、正确令牌下载成功、错误令牌被拒绝，并独立解析
 完整配置，检查 HTTP provider、规则和 IPv6 设置。仅验证成功后更新工作基线。
@@ -130,6 +157,38 @@ python3.12 subscriptions/publish.py --device iphone --bootstrap --provider /priv
 如果本地已有该设备令牌，会保留它。上传后验证失败，先恢复令牌并 `--pull` / `--verify`，
 不得重建已有订阅。常规维护不再读取首次导入文件。
 这次 iPhone、MacBook 迁移逐字保留原有节点，没有变更节点凭据或协议。
+
+## 增加、删除设备与共享文件的维护
+
+当前 CLI 仅接受 `android`、`iphone`、`macbook`，没有 `--delete` 命令。
+修改 Drive 的 env 文件只是在维护凭据登记，不会自动增加路由或停用订阅。
+所有者要求增删设备后，agent 应完成以下对应流程。
+
+### 增加设备
+
+1. 从 Cloudflare 读取现有配置；从 Drive 取得 API 凭据和已存在的共享设备登记。
+   保留所有其他设备的令牌和配置。
+2. 对新的设备名称，修改 `worker.mjs` 的设备映射与路由允许列表，以及 `publish.py`
+   的 `DEVICES`、环境变量示例、测试和本文设备表。公共规则复用现有 Pages 配置；
+   需要新平台时先完成相应公共构建。
+3. 使用该设备的 `--bootstrap --provider`，只为新设备生成令牌，上传 JSON 变量并
+   验证完整配置、节点、鉴权及其他设备订阅。已有设备禁止重新 bootstrap。
+4. 如 Drive 中已有 `.env.subscriptions`，将新增的 `<DEVICE>_SUBSCRIPTION_TOKEN`
+   合并写回原文件；不存在时按所有者要求建立共享登记。核对原有令牌未改变，
+   提供私密完整订阅地址，提交公开代码与文档改动。
+
+### 删除设备
+
+1. 确认用户要求停用的设备；下载当前云端配置和共享登记，保存私密恢复备份。
+2. 将目标设备从 Worker 路由和设备映射、发布器 `DEVICES`、env 示例、测试与文档移除。
+   部署时同时移除该设备的 CONFIG binding，保留所有其他设备的当前 binding。
+   当前部署器会拒绝未知 binding；必须为移除操作设计明确的处理，不能通过忽略检查
+   或用一个缺少其他设备 binding 的上传来删除设备。
+3. 验证已删除设备的原 provider/config URL 返回 404，剩余设备正常。
+   再从本机及 Drive 中已有的 `.env.subscriptions` 移除该设备令牌条目，保留其他字段。
+   `.env.cloudflare` 通常无需变化，因为 API 凭据按账户管理。
+4. 正常更新原共享文件即可；保留恢复备份，不顺带删除 Drive 文件夹或其他设备文件。
+   旧 Worker 版本/私密备份可能仍含旧凭据，回滚时应核对停用设备不会被重新启用。
 
 ## Worker 代码更新
 
@@ -165,7 +224,7 @@ python3.12 subscriptions/publish.py --pull --discard-local
 - 回滚节点：先 `--pull` 建立当前基线，把选定私密备份复制到工作文件，校验后
   `--publish`；不要绕过基线检查。
 - 缺少 Token：交由所有者从可信凭据备份恢复，不要创建新设备令牌自动替换。
-- 首次接入见下节；`--bootstrap` 会拒绝覆盖已经存在的设备。
+- 首次接入见上节；`--bootstrap` 会拒绝覆盖已经存在的设备。
 
 所有私密输出都在 gitignored 的 `dist/subscriptions/`，权限为 0600：
 

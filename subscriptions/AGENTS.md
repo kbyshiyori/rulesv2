@@ -29,3 +29,15 @@ Read `README.md` here before changing or deploying subscriptions.
   in the runtime bindings. Dashboard edits are cloud updates: pull a fresh baseline.
 - Publish CONFIG as `type: json`, preserve other device bindings via inherit. Worker
   accepts native JSON objects and legacy string bindings during migration.
+
+- Shared API credentials are in Google Drive `Agents/cloudflare/.env.cloudflare`
+  under the plugin account larry@kbyshiyori.com. See README for verified folder/file
+  links. The owner authorizes agents to update this project's shared credential
+  files in place, preserving IDs, parents and permissions. Do not create duplicate
+  files or widen sharing. Read fresh content, merge, and verify the write.
+- `.env.subscriptions` is not currently uploaded to Drive. Do not claim device
+  tokens are available there. When the owner requests sharing that registry, keep
+  device additions/removals synchronized in the original Drive file and local copy.
+- Device changes need Worker/publisher mappings, deployment and live verification;
+  editing Drive credentials alone does not change subscriptions. There is no delete
+  CLI. Remove only a user-requested device and preserve all others; see README.

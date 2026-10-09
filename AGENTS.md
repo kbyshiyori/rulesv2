@@ -161,3 +161,10 @@ local gitignored `.env.cloudflare` and `.env.subscriptions`; never print them.
 Rules continue to publish to Pages; the authenticated Worker assembles the full
 selected device profile when it refreshes. iPhone uses Clash backcn and MacBook uses
 Muse; Windows and AVP have not been migrated. Use --device explicitly for non-Android.
+
+Shared API credentials are available through the Google Drive plugin in
+`Agents/cloudflare/.env.cloudflare`; see the subscription guide for the exact account
+and links. Agents may update the project's shared credential files in place while
+preserving Drive permissions. Device tokens in `.env.subscriptions` have not yet been
+uploaded. Device additions/removals require code, cloud deployment and verification;
+Drive file edits alone do not deploy anything.
