@@ -109,7 +109,7 @@ subscription.
 | `🛡️ 安全浏览` | `browsercrp.vivo.com.cn` | usually `DIRECT` |
 | `🎮 游戏` | 原神 (`com.miHoYo.Yuanshen`) **and** hoyoverse/mihoyo suffixes | `DIRECT` when in CN; jpty1-game abroad (JP exit, lower latency to 国服 than naked JP) |
 | `🇨🇦 北美` | US banks, YouTube **app**, Muse, work/login apps (Authenticator, Okta Verify, Outlook, Slack, Zoom), plus matching suffixes (banks, Slack, Okta, Zoom, Entra/Outlook login hosts) | CA/PayPal node |
-| `🎯 全球直连` | the NekoBox 绕过 apps (minus YouTube/T-Life/Muse/work-login apps), Tailscale (`com.tailscale.ipn` plus `tailscale.com` / `tailscale.io`), **and** ACL4SSR `ProxyGFWlist` / `ProxyMedia` / `Telegram` for the browser | `DIRECT` when abroad; an overseas node when in CN |
+| `🎯 全球直连` | the NekoBox 绕过 apps (minus YouTube/T-Life/Muse/work-login apps), Tailscale (`com.tailscale.ipn` plus `tailscale.com` / `tailscale.io`), Claude (`com.anthropic.claude` plus `claude.ai` / `anthropic.com` / `claudeusercontent.com`), Grok (`ai.x.grok` plus `grok.com` / `x.ai`), **and** ACL4SSR `ProxyGFWlist` / `ProxyMedia` / `Telegram` for the browser | `DIRECT` when abroad; an overseas node when in CN |
 | `🐟 漏网之鱼` | CN lists, `redirect-to-cn`, `GEOIP,CN`, unmatched `MATCH` | China node when abroad; `DIRECT` when in CN |
 
 Rules are emitted in that order, so domain groups win over app groups. YouTube **app** still beats the later YouTube rule-set.
@@ -131,7 +131,8 @@ the connection (DIRECT in CN; jpty1-game abroad). Node hostnames still use `syst
 (`🎯 全球直连`) — both foreign. Slack / Okta / Zoom / Outlook / Entra suffixes
 share `🇨🇦 北美` with the apps so a browser SSO hop does not fall through to
 `🎯 全球直连` or `MATCH`. Tailscale control-plane suffixes share `🎯 全球直连`
-with the app; `ts.net` MagicDNS has no routing rule and uses `system` DNS
+with the app, as do Claude (`claude.ai`, `anthropic.com`, `claudeusercontent.com`)
+and Grok (`grok.com`, `x.ai`). `ts.net` MagicDNS has no routing rule and uses `system` DNS
 (`+.ts.net`, same idea as `+.lan` / `+.local`) so unmatched names do not fall
 through to AliDNS / `🐟 漏网之鱼`. Do not set `direct-nameserver: system` or DIRECT groups
 would leak to the ISP resolver.

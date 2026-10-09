@@ -137,8 +137,12 @@ class BuildTests(unittest.TestCase):
         self.assertNotIn(f"DOMAIN-SUFFIX,slack.com,{build.GROUP_NA}", text)
         self.assertNotIn(f"DOMAIN-SUFFIX,zoom.us,{build.GROUP_NA}", text)
         self.assertNotIn(f"DOMAIN-SUFFIX,tailscale.com,{build.GROUP_GLOBAL}", text)
+        self.assertNotIn(f"DOMAIN-SUFFIX,claude.ai,{build.GROUP_GLOBAL}", text)
+        self.assertNotIn(f"DOMAIN-SUFFIX,grok.com,{build.GROUP_GLOBAL}", text)
         self.assertNotIn("PROCESS-NAME,com.Slack", text)
         self.assertNotIn("PROCESS-NAME,com.tailscale.ipn", text)
+        self.assertNotIn("PROCESS-NAME,com.anthropic.claude", text)
+        self.assertNotIn("PROCESS-NAME,ai.x.grok", text)
         self.assertNotIn("PROCESS-NAME,us.zoom.videomeetings", text)
         self.assertNotIn('"+.ts.net"', text)
         self.assertNotIn(f"DOMAIN-SUFFIX,18comic.vip,{build.GROUP_18}", text)
@@ -306,6 +310,14 @@ class BuildTests(unittest.TestCase):
             text,
         )
         self.assertIn(
+            f'    "+.claude.ai": "https://dns.example/dns-query#{build.GROUP_GLOBAL}"',
+            text,
+        )
+        self.assertIn(
+            f'    "+.grok.com": "https://dns.example/dns-query#{build.GROUP_GLOBAL}"',
+            text,
+        )
+        self.assertIn(
             f'    "+.hoyoverse.com": "https://223.5.5.5/dns-query#{build.GROUP_GAME}"',
             text,
         )
@@ -363,6 +375,8 @@ class BuildTests(unittest.TestCase):
         self.assertNotIn(f"PROCESS-NAME,com.Slack,{build.GROUP_GLOBAL}", text)
         self.assertIn(f"PROCESS-NAME,com.tailscale.ipn,{build.GROUP_GLOBAL}", text)
         self.assertNotIn(f"PROCESS-NAME,com.tailscale.ipn,{build.GROUP_NA}", text)
+        self.assertIn(f"PROCESS-NAME,com.anthropic.claude,{build.GROUP_GLOBAL}", text)
+        self.assertIn(f"PROCESS-NAME,ai.x.grok,{build.GROUP_GLOBAL}", text)
         self.assertIn(f"PROCESS-NAME,us.zoom.videomeetings,{build.GROUP_NA}", text)
         self.assertNotIn(f"PROCESS-NAME,us.zoom.videomeetings,{build.GROUP_GLOBAL}", text)
         self.assertIn(f"PROCESS-NAME,com.reddit.frontpage,{build.GROUP_GLOBAL}", text)
@@ -380,6 +394,11 @@ class BuildTests(unittest.TestCase):
         self.assertIn(f"DOMAIN-SUFFIX,zoom.us,{build.GROUP_NA}", text)
         self.assertIn(f"DOMAIN-SUFFIX,tailscale.com,{build.GROUP_GLOBAL}", text)
         self.assertNotIn(f"DOMAIN-SUFFIX,tailscale.com,{build.GROUP_NA}", text)
+        self.assertIn(f"DOMAIN-SUFFIX,claude.ai,{build.GROUP_GLOBAL}", text)
+        self.assertIn(f"DOMAIN-SUFFIX,anthropic.com,{build.GROUP_GLOBAL}", text)
+        self.assertIn(f"DOMAIN-SUFFIX,claudeusercontent.com,{build.GROUP_GLOBAL}", text)
+        self.assertIn(f"DOMAIN-SUFFIX,grok.com,{build.GROUP_GLOBAL}", text)
+        self.assertIn(f"DOMAIN-SUFFIX,x.ai,{build.GROUP_GLOBAL}", text)
         self.assertNotIn(f"DOMAIN-SUFFIX,ts.net,{build.GROUP_NA}", text)
         self.assertNotIn(f"DOMAIN-SUFFIX,ts.net,{build.GROUP_GLOBAL}", text)
         self.assertIn(f"DOMAIN-SUFFIX,outlook.com,{build.GROUP_NA}", text)
