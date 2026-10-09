@@ -180,8 +180,12 @@ CI builds on a daily cron (and on push) and publishes seven files to **GitHub Pa
 - `https://kbyshiyori.github.io/rulesv2/flclash.yaml`
 - `https://kbyshiyori.github.io/rulesv2/clash-backcn-muse.yaml`
 
-Subscribe the matching client to its URL. For Clash, import a device-specific
-`private-provider.yaml` under the profile's **Proxy Sources**; keep that file private.
+Subscribe the matching client to its URL. For clients using local node providers,
+import a device-specific `private-provider.yaml` under **Proxy Sources** and keep it
+private. Android, iPhone (Clash/Hako), and MacBook (Muse) now have private Cloudflare full-profile subscriptions that
+combine each device’s public rules with its cloud-managed node provider. Maintenance
+does not depend on iCloud. See [subscriptions/README.md](subscriptions/README.md) for
+the endpoint distinction, agent workflow, local credentials, verification and recovery.
 Pages gives auto-TLS + CDN and no server to run. The Pages site is public, so the published
 config — **including the injected `NEXTDNS_DOH_URL`** — is public by design (see below).
 
@@ -197,4 +201,6 @@ mirrors [`.env.example`](.env.example)):
   query quota. Rotate the config id if that ever becomes a problem. Keep the URL out of the
   *source tree* regardless; set it only as the Actions secret.
 
-Publishing is intentional here — there is no private/"unguessable path" delivery anymore.
+The Pages rule profiles are intentionally public. Private device nodes are delivered
+separately through an authenticated Worker; its URLs and API credentials never belong
+in the public source tree. See [the private subscription guide](subscriptions/README.md).
