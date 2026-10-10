@@ -150,3 +150,22 @@ CI publishes the built `sr-backcn.conf` to **GitHub Pages**
 (`https://kbyshiyori.github.io/rulesv2/sr-backcn.conf`) via `actions/deploy-pages`. There is
 no SSH/rsync deploy and no delivery server to manage. Node/DNS config on the China relay
 lives in the owner's separate `vps` repo; this repo only owns rule/config generation.
+
+## Private device subscriptions
+
+Read `subscriptions/README.md` and `subscriptions/AGENTS.md` before subscription work.
+Cloudflare is authoritative for Android, iPhone, and MacBook nodes; do not read or overwrite iCloud for
+routine maintenance. Use `--pull` → edit ignored working YAML → `--check` → `--publish`.
+Use `--deploy-code` for Worker updates, preserving cloud nodes. Private tokens are
+provided through each agent's CLOUDFLARE_API_TOKEN Secret and the local gitignored
+`.env.subscriptions`; never print them. A legacy local `.env.cloudflare` fallback remains.
+Rules continue to publish to Pages; the authenticated Worker assembles the full
+selected device profile when it refreshes. iPhone uses Clash backcn and MacBook uses
+Muse; Windows and AVP have not been migrated. Use --device explicitly for non-Android.
+
+Shared device tokens are available through the Google Drive plugin in
+`Agents/cloudflare/.env.subscriptions`; see the subscription guide for the exact
+account and links. Agents may update that registry in place while preserving Drive
+permissions and other device tokens. Cloudflare API tokens belong in each agent's
+Secret and must not be uploaded to Drive. Device additions/removals require code,
+cloud deployment and verification; Drive file edits alone do not deploy anything.
