@@ -144,6 +144,9 @@ class BuildTests(unittest.TestCase):
         self.assertNotIn("PROCESS-NAME,com.tailscale.ipn", text)
         self.assertNotIn("PROCESS-NAME,com.anthropic.claude", text)
         self.assertNotIn("PROCESS-NAME,ai.x.grok", text)
+        self.assertNotIn("PROCESS-NAME,com.x8bit.bitwarden", text)
+        self.assertNotIn(f"DOMAIN-SUFFIX,bitwarden.com,{build.GROUP_GLOBAL}", text)
+        self.assertNotIn(f"DOMAIN-SUFFIX,vault.kbyshiyori.com,{build.GROUP_GLOBAL}", text)
         self.assertNotIn("PROCESS-NAME,us.zoom.videomeetings", text)
         self.assertNotIn('"+.ts.net"', text)
         self.assertNotIn(f"DOMAIN-SUFFIX,18comic.vip,{build.GROUP_18}", text)
@@ -319,6 +322,22 @@ class BuildTests(unittest.TestCase):
             text,
         )
         self.assertIn(
+            f'    "+.bitwarden.com": "https://dns.example/dns-query#{build.GROUP_GLOBAL}"',
+            text,
+        )
+        self.assertIn(
+            f'    "+.bitwarden.net": "https://dns.example/dns-query#{build.GROUP_GLOBAL}"',
+            text,
+        )
+        self.assertIn(
+            f'    "+.bitwarden.eu": "https://dns.example/dns-query#{build.GROUP_GLOBAL}"',
+            text,
+        )
+        self.assertIn(
+            f'    "+.vault.kbyshiyori.com": "https://dns.example/dns-query#{build.GROUP_GLOBAL}"',
+            text,
+        )
+        self.assertIn(
             f'    "+.icloud.com": "https://dns.example/dns-query#{build.GROUP_GLOBAL}"',
             text,
         )
@@ -386,6 +405,8 @@ class BuildTests(unittest.TestCase):
         self.assertNotIn(f"PROCESS-NAME,com.tailscale.ipn,{build.GROUP_NA}", text)
         self.assertIn(f"PROCESS-NAME,com.anthropic.claude,{build.GROUP_GLOBAL}", text)
         self.assertIn(f"PROCESS-NAME,ai.x.grok,{build.GROUP_GLOBAL}", text)
+        self.assertIn(f"PROCESS-NAME,com.x8bit.bitwarden,{build.GROUP_GLOBAL}", text)
+        self.assertNotIn(f"PROCESS-NAME,com.x8bit.bitwarden,{build.GROUP_NA}", text)
         self.assertIn(f"PROCESS-NAME,us.zoom.videomeetings,{build.GROUP_NA}", text)
         self.assertNotIn(f"PROCESS-NAME,us.zoom.videomeetings,{build.GROUP_GLOBAL}", text)
         self.assertIn(f"PROCESS-NAME,com.reddit.frontpage,{build.GROUP_GLOBAL}", text)
@@ -408,6 +429,11 @@ class BuildTests(unittest.TestCase):
         self.assertIn(f"DOMAIN-SUFFIX,claudeusercontent.com,{build.GROUP_GLOBAL}", text)
         self.assertIn(f"DOMAIN-SUFFIX,grok.com,{build.GROUP_GLOBAL}", text)
         self.assertIn(f"DOMAIN-SUFFIX,x.ai,{build.GROUP_GLOBAL}", text)
+        self.assertIn(f"DOMAIN-SUFFIX,bitwarden.com,{build.GROUP_GLOBAL}", text)
+        self.assertIn(f"DOMAIN-SUFFIX,bitwarden.net,{build.GROUP_GLOBAL}", text)
+        self.assertIn(f"DOMAIN-SUFFIX,bitwarden.eu,{build.GROUP_GLOBAL}", text)
+        self.assertIn(f"DOMAIN-SUFFIX,vault.kbyshiyori.com,{build.GROUP_GLOBAL}", text)
+        self.assertIn("DOMAIN,pikvm.kbyshiyori.com,DIRECT", text)
         self.assertIn(f"DOMAIN-SUFFIX,icloud.com,{build.GROUP_GLOBAL}", text)
         self.assertIn(f"DOMAIN-SUFFIX,icloud-content.com,{build.GROUP_GLOBAL}", text)
         self.assertIn(f"DOMAIN-SUFFIX,apple-cloudkit.com,{build.GROUP_GLOBAL}", text)
