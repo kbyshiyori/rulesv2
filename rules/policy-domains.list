@@ -62,9 +62,12 @@ domain-suffix,claudeusercontent.com,🎯 全球直连
 domain-suffix,grok.com,🎯 全球直连
 domain-suffix,x.ai,🎯 全球直连
 # Official Bitwarden clouds. US uses .com plus icons on .net; EU uses .eu.
+# vault.kbyshiyori.com is the self-hosted server. Suffix is that host only;
+# pikvm.kbyshiyori.com stays DIRECT via the emitter.
 domain-suffix,bitwarden.com,🎯 全球直连
 domain-suffix,bitwarden.net,🎯 全球直连
 domain-suffix,bitwarden.eu,🎯 全球直连
+domain-suffix,vault.kbyshiyori.com,🎯 全球直连
 # iCloud service domains only. Country-code lookalikes (icloud.de, icloud.jp, …)
 # are not Apple and are omitted. mask.icloud.com is covered by icloud.com.
 domain-suffix,icloud.com,🎯 全球直连
