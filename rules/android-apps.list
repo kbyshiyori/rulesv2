@@ -11,7 +11,7 @@
 # because that rule was above 绕过app on the phone. Muse and the work/login
 # apps (Authenticator, Okta Verify, Outlook, Slack, Zoom) were moved to 北美.
 # Tailscale stays on 🎯 全球直连 with its control-plane suffixes. Claude,
-# Grok, and Bitwarden do the same. Matching suffixes live in policy-domains.list
+# Grok, ChatGPT, and Bitwarden do the same. Matching suffixes live in policy-domains.list
 # so browser hops and inner DNS follow the same group. com.follow.clash is
 # omitted here; the emitter always pins it to DIRECT.
 
@@ -62,3 +62,6 @@
 🎯 全球直连,com.anthropic.claude,Claude
 🎯 全球直连,ai.x.grok,Grok
 🎯 全球直连,com.x8bit.bitwarden,Bitwarden
+🎯 全球直连,com.openai.chatgpt,ChatGPT
+🎯 全球直连,com.microsoft.emmx,Microsoft Edge
+🎯 全球直连,com.android.chrome,Google Chrome

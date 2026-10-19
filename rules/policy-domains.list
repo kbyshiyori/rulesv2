@@ -13,8 +13,8 @@
 # Zoom suffixes are listed because those apps hop to the system browser
 # (Entra / Okta SSO) and because inner DNS has no PROCESS-NAME. Tailscale
 # control-plane suffixes go to 🎯 全球直连; ts.net MagicDNS is omitted from
-# routing so FlClash does not steal tailnet hostnames. Claude, Grok, and
-# Bitwarden suffixes cover the same inner-DNS / browser-hop case for those
+# routing so FlClash does not steal tailnet hostnames. Claude, Grok,
+# ChatGPT, and Bitwarden suffixes cover the same inner-DNS / browser-hop case for those
 # apps. Bitwarden is absent from ACL4SSR ProxyGFWlist.
 # International iCloud suffixes stay on 🎯 全球直连. China aliases
 # (icloud.com.cn and the other *.cn names) are omitted.
@@ -61,6 +61,21 @@ domain-suffix,anthropic.com,🎯 全球直连
 domain-suffix,claudeusercontent.com,🎯 全球直连
 domain-suffix,grok.com,🎯 全球直连
 domain-suffix,x.ai,🎯 全球直连
+# ChatGPT Android browser login / callback: auth.openai.com, auth0.openai.com,
+# chat.openai.com and android.chat.openai.com are covered by openai.com.
+# Keep DNS and browser hops on the app's group, including login challenges.
+# Source: https://help.openai.com/en/articles/9247338-network-recommendations-for-chatgpt-errors
+domain-suffix,openai.com,🎯 全球直连
+domain-suffix,chatgpt.com,🎯 全球直连
+domain-suffix,oaistatic.com,🎯 全球直连
+domain-suffix,oaiusercontent.com,🎯 全球直连
+domain-suffix,oaistatsig.com,🎯 全球直连
+domain-suffix,openai.auth0.com,🎯 全球直连
+domain-suffix,challenges.cloudflare.com,🎯 全球直连
+domain-suffix,cdn.workos.com,🎯 全球直连
+domain-suffix,forwarder.workos.com,🎯 全球直连
+domain-suffix,frontend-apps-multi-region.workos.com,🎯 全球直连
+domain-suffix,images.workoscdn.com,🎯 全球直连
 # Official Bitwarden clouds. US uses .com plus icons on .net; EU uses .eu.
 # vault.kbyshiyori.com is the self-hosted server. Suffix is that host only;
 # pikvm.kbyshiyori.com stays DIRECT via the emitter.
