@@ -134,6 +134,12 @@ share `🇨🇦 北美` with the apps so a browser SSO hop does not fall through
 with the app, as do Claude (`claude.ai`, `anthropic.com`, `claudeusercontent.com`),
 Grok (`grok.com`, `x.ai`), and Bitwarden (`bitwarden.com`, `bitwarden.net`,
 `bitwarden.eu`, plus the self-hosted `vault.kbyshiyori.com`). International iCloud suffixes share that group too.
+ChatGPT (`com.openai.chatgpt`), Edge (`com.microsoft.emmx`), and Chrome
+(`com.android.chrome`) also use `🎯 全球直连`. ChatGPT's `openai.com` /
+`chatgpt.com`, static/content domains, legacy `openai.auth0.com`, and login
+challenge / WorkOS hosts in `policy-domains.list` use that group for both routing
+and DNS. This covers browser login and the `android.chat.openai.com` callback.
+Edge and Chrome only add package rules; existing destination rules retain priority.
 `ts.net` MagicDNS has no routing rule and uses `system` DNS
 (`+.ts.net`, same idea as `+.lan` / `+.local`) so unmatched names do not fall
 through to AliDNS / `🐟 漏网之鱼`. Do not set `direct-nameserver: system` or DIRECT groups
