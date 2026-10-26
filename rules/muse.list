@@ -3,7 +3,7 @@
 # Format:
 #   domain-suffix,<domain>
 #   domain,<hostname>
-# Clash Muse and Clash Verge Rev map these to 🎨 Muse. Other clients ignore this file.
+# Hako and Clash Verge Rev map these to 🎨 Muse. FlClash ignores this file.
 
 domain-suffix,muse.ai
 domain,auth.meta.com

@@ -10,11 +10,16 @@
 | `--device` | 完整配置的公共来源 | 节点配置 |
 | --- | --- | --- |
 | `android`（默认） | `flclash.yaml` | 现有 Android 节点，IPv6 关闭 |
-| `iphone` | `clash-backcn.yaml` | iPhone Clash/Hako YAML，DMIT 使用 Vision |
-| `macbook` | `clash-backcn-muse.yaml` | MacBook Muse YAML，DMIT 使用 h2mux |
+| `iphone` | `clash-backcn.yaml`（sunset，内容同 `clash-hako.yaml`） | iPhone Clash/Hako YAML，DMIT 使用 Vision |
+| `macbook` | `clash-backcn-muse.yaml`（sunset，内容同 `clash-hako.yaml`） | MacBook Hako（含 Muse）YAML，DMIT 使用 h2mux |
 
 这是 Clash YAML 订阅；iPhone 此入口不是 Shadowrocket 的 `.conf` 配置。
 iPhone 与 MacBook 的 IPv6 跟随各自公共主配置。Windows、AVP 尚未迁移。
+
+Hako 已合并原 Muse 配置，境内外使用同一份 `clash-hako.yaml`，只切换分组出口。
+上述旧文件名保留为带 `# SUNSET` 标记的兼容别名；现有 Worker 无需重新部署，
+设备更新完整订阅即可获取统一配置。三个 Clash 客户端均将 `kbyshiyori.com`
+及全部子域名（包括 PiKVM）交给 `🎯 全球直连` 分组及其 DNS。
 
 ## 接手时先读这里
 

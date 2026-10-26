@@ -14,21 +14,21 @@ cd /path/to/rulesv2
 python3.12 --version
 python3.12 -m unittest discover -s targets/shadowrocket -p 'test_*.py'
 python3.12 -m unittest discover -s targets/clash -p 'test_*.py'
-python3.12 targets/clash/build.py --profile backcn \
+python3.12 targets/clash/build.py --platform hako \
   --rules rules/redirect-to-cn.list \
   --direct-rules rules/direct.list \
-  --out /tmp/clash-backcn.yaml
+  --out /tmp/clash-hako.yaml
 python3.12 targets/clash/build.py --platform flclash \
   --rules rules/redirect-to-cn.list \
   --direct-rules rules/direct.list \
   --android-apps rules/android-apps.list \
   --policy-domains rules/policy-domains.list \
   --out /tmp/flclash.yaml
-python3.12 targets/clash/build.py --platform muse \
+python3.12 targets/clash/build.py --platform hako \
   --rules rules/redirect-to-cn.list \
   --direct-rules rules/direct.list \
   --muse-rules rules/muse.list \
-  --out /tmp/clash-backcn-muse.yaml
+  --out /tmp/clash-hako.yaml
 python3.12 targets/clash/build.py --platform verge \
   --rules rules/redirect-to-cn.list \
   --direct-rules rules/direct.list \
@@ -100,17 +100,17 @@ grep -n '223.5.5.5' /tmp/flclash.yaml
 grep -n 'rule-set:acl-gfw' /tmp/flclash.yaml
 grep -n 'hoyoverse.com.*223.5.5.5.*#🎮 游戏' /tmp/flclash.yaml
 
-python targets/clash/build.py --platform muse \
+python targets/clash/build.py --platform hako \
   --rules rules/redirect-to-cn.list \
   --direct-rules rules/direct.list \
   --muse-rules rules/muse.list \
-  --out /tmp/clash-backcn-muse.yaml
-grep -n 'DOMAIN-SUFFIX,muse.ai,🎨 Muse' /tmp/clash-backcn-muse.yaml
-grep -n 'RULE-SET,youtube,📺 YouTube' /tmp/clash-backcn-muse.yaml
-grep -n 'RULE-SET,acl-gfw,🎯 全球直连' /tmp/clash-backcn-muse.yaml
-grep -n 'GEOIP,CN,🇨🇳 中国代理' /tmp/clash-backcn-muse.yaml
-grep -n 'MATCH,🐟 漏网之鱼' /tmp/clash-backcn-muse.yaml
-grep -n 'respect-rules: true' /tmp/clash-backcn-muse.yaml
+  --out /tmp/clash-hako.yaml
+grep -n 'DOMAIN-SUFFIX,muse.ai,🎨 Muse' /tmp/clash-hako.yaml
+grep -n 'RULE-SET,youtube,📺 YouTube' /tmp/clash-hako.yaml
+grep -n 'RULE-SET,acl-gfw,🎯 全球直连' /tmp/clash-hako.yaml
+grep -n 'GEOIP,CN,🇨🇳 中国代理' /tmp/clash-hako.yaml
+grep -n 'MATCH,🐟 漏网之鱼' /tmp/clash-hako.yaml
+grep -n 'respect-rules: true' /tmp/clash-hako.yaml
 
 python targets/clash/build.py --platform verge \
   --rules rules/redirect-to-cn.list \
@@ -130,8 +130,8 @@ grep -n 'hoyoverse.com.*#🎮 游戏' /tmp/clash-verge.yaml
 ```
 
 For a DNS change also pass `--dns 'https://dns.nextdns.io/PLACEHOLDER'` and confirm the
-FlClash / Muse / Verge `nameserver-policy` foreign entries (and Hako / Shadowrocket
-`dns-server`) use that URL. For Muse and Verge, the same URL appears with a `#分组` suffix
+FlClash / Hako / Verge `nameserver-policy` foreign entries (and Shadowrocket
+`dns-server`) use that URL. For Hako and Verge, the same URL appears with a `#分组` suffix
 (`#🎮 游戏`, `#📺 YouTube`, `#🎨 Muse`, `#🎯 全球直连`). FlClash `🎮 游戏` stays on AliDNS
 (`#🎮 游戏`) like `🐟 漏网之鱼`; the foreign URL is only on `🎯 全球直连` / `🇨🇦 北美` / `🔞 18` /
 `🎬 missav`. Never commit a real NextDNS URL.
@@ -160,8 +160,8 @@ Use `--deploy-code` for Worker updates, preserving cloud nodes. Private tokens a
 provided through each agent's CLOUDFLARE_API_TOKEN Secret and the local gitignored
 `.env.subscriptions`; never print them. A legacy local `.env.cloudflare` fallback remains.
 Rules continue to publish to Pages; the authenticated Worker assembles the full
-selected device profile when it refreshes. iPhone uses Clash backcn and MacBook uses
-Muse; Windows and AVP have not been migrated. Use --device explicitly for non-Android.
+selected device profile when it refreshes. iPhone uses Hako through a sunset alias and MacBook uses
+Hako (including Muse); Windows and AVP have not been migrated. Use --device explicitly for non-Android.
 
 Shared device tokens are available through the Google Drive plugin in
 `Agents/cloudflare/.env.subscriptions`; see the subscription guide for the exact
@@ -169,3 +169,11 @@ account and links. Agents may update that registry in place while preserving Dri
 permissions and other device tokens. Cloudflare API tokens belong in each agent's
 Secret and must not be uploaded to Drive. Device additions/removals require code,
 cloud deployment and verification; Drive file edits alone do not deploy anything.
+
+## Clash client consolidation
+
+Only `hako`, `verge`, and `flclash` are platforms. Hako includes the former Muse
+configuration. All are location-switch profiles; `--profile` is sunset and ignored.
+Publish `clash-hako.yaml` plus header-marked sunset aliases `clash-backcn.yaml`,
+`clash-cnip.yaml`, and `clash-backcn-muse.yaml` to preserve existing device subscriptions.
+All three clients consume `rules/global-domains.list`, including PiKVM.
