@@ -4,18 +4,25 @@ Version-controlled build pipeline for personal proxy rule configs. Takes a maint
 upstream ruleset, layers local overrides (回国 domain routing, DNS), and publishes a
 ready-to-subscribe routing profile per client.
 
-- **Today:** Shadowrocket and Clash/Hako (macOS/iOS) each with 回国 (`backcn`) and 出国
-  (`cnip`) profiles; Clash Verge Rev (Windows), FlClash (Android), and
-  `clash-backcn-muse.yaml` are each **one** profile whose groups you switch by location.
-  Verge groups: `📺 YouTube`, `🎨 Muse`, `🎮 游戏`, `🎯 全球直连`, `🇨🇳 中国代理`,
-  `🐟 漏网之鱼`. Muse is the same idea without the game process group.
+- **Today:** Clash has three client targets: Hako (iOS/macOS, includes the former
+  Muse profile), Verge (Windows), and FlClash (Android). Each uses one configuration
+  inside and outside CN; switch its selected exits by location. All three route
+  `kbyshiyori.com` and its subdomains (including PiKVM) through `🎯 全球直连`.
+- **Sunset:** Clash backcn/cnip and the separate Muse platform. Old filenames are
+  compatibility aliases of `clash-hako.yaml`, marked `# SUNSET`. `--profile` is
+  deprecated and ignored by the Clash builder. Shadowrocket's backcn/cnip builder
+  remains available separately.
 - **Planned:** sing-box config for other Android clients (same `rules/` intent, different emitter).
 
 > This repo is worked on mainly by coding agents (Claude / Codex); the owner mainly
 > reviews. Read [`AGENTS.md`](AGENTS.md) before making changes. Open tasks in
 > [`TODO.md`](TODO.md).
 
-## What "回国 / backcn" means here
+## Legacy direction profiles (Shadowrocket)
+
+Clash uses the client profiles below; these direction terms now apply only to Shadowrocket.
+
+### 回国 / backcn
 
 Egress split for someone **outside** mainland China who wants mainland services to see a
 China IP:
@@ -28,7 +35,7 @@ China IP:
 In Shadowrocket you pick the China node and set it to *use config*; the `PROXY` policy
 follows the selected node, so **the built config carries no node/proxy secrets**.
 
-## What "出国 / cnip" means here
+### 出国 / cnip
 
 For someone **inside** mainland China, mainland destinations stay `DIRECT` and everything
 else uses `PROXY` through an overseas node. The explicit `redirect-to-cn` domains also
@@ -51,8 +58,8 @@ the same file name while using different WireGuard client keys and addresses.
 - **`redirect-to-cn` override.** `GEOIP,CN` mis-routes services hosted on global CDNs
   (Akamai / Tencent EdgeOne overseas) — they resolve to overseas edge IPs and leak to
   DIRECT. So domains in [`rules/redirect-to-cn.list`](rules/redirect-to-cn.list) are
-  injected at the top with the route that exits in China: `PROXY` in `backcn`, `DIRECT`
-  in `cnip`. (First case: 小红书, diagnosed from a PacketTunnel log on 2026-07-15.)
+  routed via `🇨🇳 中国代理` in Hako/Verge and `🐟 漏网之鱼` in FlClash.
+  Shadowrocket uses `PROXY` in `backcn` and `DIRECT` in `cnip`. (First case: 小红书, diagnosed from a PacketTunnel log on 2026-07-15.)
 - **原神 routes by app/process, not by server IP.** Clash Verge Rev uses `YuanShen.exe` →
   `🎮 游戏`. FlClash uses `com.miHoYo.Yuanshen` → `🎮 游戏`, with the other NekoBox Android app
   groups in [`rules/android-apps.list`](rules/android-apps.list).
@@ -64,21 +71,20 @@ the same file name while using different WireGuard client keys and addresses.
   DoH (`--dns` / Cloudflare) via the other groups, each URL bound with a `#分组` suffix
   (`#🎮 游戏`, `#🎯 全球直连`, …) so `respect-rules` actually dials through that exit.
   `geolocation-!cn` is not used.
-- **Clash Verge Rev is one 6-group profile, not backcn/cnip.** Same location switch as Muse,
+- **Clash Verge Rev is one 6-group profile, not backcn/cnip.** Same location switch as Hako,
   plus Windows `YuanShen.exe` and hoyoverse/mihoyo suffixes on `🎮 游戏`. `📺 YouTube`,
   `🎨 Muse` ([`rules/muse.list`](rules/muse.list)), `🎮 游戏`, `🎯 全球直连` (ACL4SSR
   GFW/media/Telegram), `🇨🇳 中国代理` (`redirect-to-cn` + CN lists + `GEOIP,CN`), `🐟 漏网之鱼`
-  (`MATCH` fallback, same idea as Hako `MATCH`). Abroad: `🎯 全球直连=DIRECT`,
+  (`MATCH` fallback). Abroad: `🎯 全球直连=DIRECT`,
   `🇨🇳 中国代理`=China node, `🐟 漏网之鱼=DIRECT`. In CN: `🎯 全球直连` / `🐟 漏网之鱼`=overseas node,
   `🇨🇳 中国代理=DIRECT`. YouTube and Muse default to `🎯 全球直连`; pick a JP/game node in `🎮 游戏`.
-  DNS is the Muse same-side split
+  DNS uses the same group-bound split
   (`redir-host` + `respect-rules`) with each DoH URL bound to the matching group
   (`#📺 YouTube` / `#🎨 Muse` / `#🎮 游戏` / `#🎯 全球直连` / `#🇨🇳 中国代理` / `#🐟 漏网之鱼`).
-- **Clash Muse is one 5-group profile, not backcn/cnip.** Same location switch as FlClash,
+- **Hako includes Muse in one 5-group profile.** Same location switch as FlClash,
   without Android process groups. `📺 YouTube` (youtube rule-set), `🎨 Muse`
   ([`rules/muse.list`](rules/muse.list)), `🎯 全球直连` (ACL4SSR GFW/media/Telegram),
-  `🇨🇳 中国代理` (`redirect-to-cn` + CN lists + `GEOIP,CN`), `🐟 漏网之鱼` (`MATCH` fallback, same
-  idea as Hako `MATCH`). Abroad: `🎯 全球直连=DIRECT`, `🇨🇳 中国代理`=China node,
+  `🇨🇳 中国代理` (`redirect-to-cn` + CN lists + `GEOIP,CN`), `🐟 漏网之鱼` (`MATCH` fallback). Abroad: `🎯 全球直连=DIRECT`, `🇨🇳 中国代理`=China node,
   `🐟 漏网之鱼=DIRECT`. In CN: `🎯 全球直连` / `🐟 漏网之鱼`=overseas node, `🇨🇳 中国代理=DIRECT`.
   YouTube and Muse default to `🎯 全球直连`. DNS is the
   FlClash same-side split (`redir-host` + `respect-rules`) with each DoH URL bound to the
@@ -92,13 +98,15 @@ the same file name while using different WireGuard client keys and addresses.
 - **Clash uses MRS providers.** The native Clash app runs inside Apple's memory-limited
   Network Extension, so the Clash profiles consume MetaCubeX CN-domain, CN-IP, and ad
   rule sets in compiled MRS form instead of inlining ~111k text rules.
-- **YouTube has an independent selectable exit.** Both clients route a maintained
-  YouTube rule set to the `YouTube` policy. Clash emits that select group; Shadowrocket
+- **YouTube has an independent selectable exit.** Clash Hako/Verge route the maintained
+  YouTube set to `📺 YouTube`, which defaults to `🎯 全球直连` but accepts a dedicated node. Shadowrocket
   references the user's app-global group without defining it in the published conf.
   Node credentials remain local/private.
 - **DNS follows the exit direction.** Clash expresses the full split in YAML. Shadowrocket
   applies `dns-server` only to `DIRECT` domains, while `PROXY` domains resolve on the
   selected proxy server; the node-side resolver must therefore match the second column.
+
+  Shadowrocket only:
 
   | Profile | `DIRECT` DNS | `PROXY` DNS |
   |---------|--------------|-------------|
@@ -112,10 +120,11 @@ rules/redirect-to-cn.list      # client-agnostic: domains that must exit via the
 rules/direct.list              # client-agnostic: optional local DIRECT exceptions
 rules/android-apps.list        # Android package -> 🇨🇦 北美 / 🎮 游戏 / 🎯 全球直连
 rules/policy-domains.list      # domain -> 18 / missav / 安全浏览 / 北美 / 游戏
+rules/global-domains.list      # all Clash clients -> 全球直连 (apex and subdomains)
 rules/muse.list                # Muse / Meta AI hosts -> 🎨 Muse
 docs/nekobox-route-snapshot.json # observed Android NekoBox rules; source for the lists above
 targets/shadowrocket/build.py  # emits the Shadowrocket sr-backcn.conf
-targets/clash/build.py         # emits Clash/Hako, Clash Verge Rev, FlClash, and Muse YAML
+targets/clash/build.py         # emits Hako, Clash Verge Rev, and FlClash YAML
 targets/sing-box/              # planned Android emitter (stub)
 .github/workflows/build.yml    # daily cron + on-push build, publish to GitHub Pages
 dist/                          # local build output (gitignored)
@@ -137,11 +146,11 @@ python targets/shadowrocket/build.py --profile cnip \
   --direct-rules rules/direct.list \
   --out dist/shadowrocket/sr-cnip.conf
 
-# Clash/Hako: change --profile between backcn and cnip
-python targets/clash/build.py --profile backcn \
+# Hako: one configuration for both locations, includes Muse
+python targets/clash/build.py --platform hako \
   --rules rules/redirect-to-cn.list \
   --direct-rules rules/direct.list \
-  --out dist/clash/clash-backcn.yaml
+  --out dist/clash/clash-hako.yaml
 
 # Clash Verge Rev: one profile; switch 🎯 全球直连 / 🇨🇳 中国代理 / 🐟 漏网之鱼 by location
 python targets/clash/build.py --platform verge \
@@ -159,30 +168,25 @@ python targets/clash/build.py --platform flclash \
   --policy-domains rules/policy-domains.list \
   --out dist/clash/flclash.yaml
 
-# Clash Muse: one 5-group profile; switch 🎯 全球直连 / 🇨🇳 中国代理 / 🐟 漏网之鱼 by location
-python targets/clash/build.py --platform muse \
-  --rules rules/redirect-to-cn.list \
-  --direct-rules rules/direct.list \
-  --muse-rules rules/muse.list \
-  --out dist/clash/clash-backcn-muse.yaml
 # add --dns "$NEXTDNS_DOH_URL" for the foreign-side DoH (else Cloudflare)
 ```
 
 ## Delivery
 
-CI builds on a daily cron (and on push) and publishes seven files to **GitHub Pages**:
+CI builds on a daily cron (and on push) and publishes client profiles plus sunset compatibility aliases to **GitHub Pages**:
 
 - `https://kbyshiyori.github.io/rulesv2/sr-backcn.conf`
 - `https://kbyshiyori.github.io/rulesv2/sr-cnip.conf`
-- `https://kbyshiyori.github.io/rulesv2/clash-backcn.yaml`
-- `https://kbyshiyori.github.io/rulesv2/clash-cnip.yaml`
+- `https://kbyshiyori.github.io/rulesv2/clash-hako.yaml`
 - `https://kbyshiyori.github.io/rulesv2/clash-verge.yaml`
 - `https://kbyshiyori.github.io/rulesv2/flclash.yaml`
-- `https://kbyshiyori.github.io/rulesv2/clash-backcn-muse.yaml`
+
+Sunset aliases: `clash-backcn.yaml`, `clash-cnip.yaml`, `clash-backcn-muse.yaml`
+all serve Hako with a sunset header, preserving existing private subscriptions.
 
 Subscribe the matching client to its URL. For clients using local node providers,
 import a device-specific `private-provider.yaml` under **Proxy Sources** and keep it
-private. Android, iPhone (Clash/Hako), and MacBook (Muse) now have private Cloudflare full-profile subscriptions that
+private. Android, iPhone (Clash/Hako), and MacBook (Hako, including Muse) now have private Cloudflare full-profile subscriptions that
 combine each device’s public rules with its cloud-managed node provider. Maintenance
 does not depend on iCloud. See [subscriptions/README.md](subscriptions/README.md) for
 the endpoint distinction, agent workflow, local credentials, verification and recovery.

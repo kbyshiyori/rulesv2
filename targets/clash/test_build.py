@@ -1,25 +1,80 @@
 from pathlib import Path
 from tempfile import TemporaryDirectory
 import unittest
+import subprocess
+import sys
 
 import build
 
 
 class BuildTests(unittest.TestCase):
-    def test_profiles_reverse_cn_and_fallback_policies(self) -> None:
-        backcn = build.render("backcn", ["xiaohongshu.com"], [], "https://dns.example/dns-query")
-        cnip = build.render("cnip", ["xiaohongshu.com"], [], "https://dns.example/dns-query")
+    def test_global_domains_override_cn_routing_and_dns_in_all_clients(self) -> None:
+        root = Path(__file__).resolve().parents[2]
+        domains = build.load_domains(str(root / "rules" / "global-domains.list"))
+        for platform in build.PLATFORMS:
+            for profile in ("backcn", "cnip"):
+                with self.subTest(platform=platform, profile=profile):
+                    text = build.render(
+                        profile, ["kbyshiyori.com"], [], "https://dns.example/dns-query",
+                        platform=platform, global_domains=domains,
+                    )
+                    rule = f"  - DOMAIN-SUFFIX,kbyshiyori.com,{build.GROUP_GLOBAL}\n"
+                    dns_policy = (
+                        '    "+.kbyshiyori.com": '
+                        f'"https://dns.example/dns-query#{build.GROUP_GLOBAL}"'
+                    )
+                    self.assertIn(rule, text)
+                    self.assertIn(dns_policy, text)
+                    self.assertEqual(text.count('    "+.kbyshiyori.com":'), 1)
+                    self.assertLess(text.index(rule), text.index("  - RULE-SET,cn-domain,"))
+                    self.assertLess(text.index(rule), text.index("  - DOMAIN-SUFFIX,kbyshiyori.com,", text.index(rule) + len(rule)))
+                    self.assertNotIn("  - DOMAIN,pikvm.kbyshiyori.com,DIRECT", text)
+                    self.assertNotIn("    pikvm.kbyshiyori.com: system", text)
 
-        self.assertIn("DOMAIN-SUFFIX,xiaohongshu.com,PROXY", backcn)
-        self.assertIn("RULE-SET,cn-domain,PROXY", backcn)
-        self.assertIn("MATCH,DIRECT", backcn)
-        self.assertIn('"https://dns.example/dns-query#DIRECT"', backcn)
-        self.assertIn('"https://223.5.5.5/dns-query#PROXY"', backcn)
-        self.assertIn("DOMAIN-SUFFIX,xiaohongshu.com,DIRECT", cnip)
-        self.assertIn("RULE-SET,cn-domain,DIRECT", cnip)
-        self.assertIn("MATCH,PROXY", cnip)
-        self.assertIn('"https://dns.example/dns-query#PROXY"', cnip)
-        self.assertIn('"https://223.5.5.5/dns-query#DIRECT"', cnip)
+    def test_cli_defaults_and_sunset_profiles_produce_the_same_client_config(self) -> None:
+        root = Path(__file__).resolve().parents[2]
+        with TemporaryDirectory() as directory:
+            output = Path(directory) / "profile.yaml"
+            command = [
+                sys.executable, str(root / "targets/clash/build.py"),
+                "--rules", str(root / "rules/redirect-to-cn.list"),
+                "--direct-rules", str(root / "rules/direct.list"),
+                "--android-apps", str(root / "rules/android-apps.list"),
+                "--policy-domains", str(root / "rules/policy-domains.list"),
+                "--out", str(output),
+            ]
+            for platform in build.PLATFORMS:
+                with self.subTest(platform=platform):
+                    args = command + ["--platform", platform]
+                    subprocess.run(args, check=True, capture_output=True, text=True)
+                    baseline = output.read_text()
+                    self.assertIn(f"DOMAIN-SUFFIX,kbyshiyori.com,{build.GROUP_GLOBAL}", baseline)
+                    self.assertNotIn("pikvm.kbyshiyori.com: system", baseline)
+                    if platform == "hako":
+                        self.assertIn(f"DOMAIN-SUFFIX,muse.ai,{build.GROUP_MUSE}", baseline)
+                    for profile in ("backcn", "cnip"):
+                        result = subprocess.run(
+                            args + ["--profile", profile], check=True, capture_output=True, text=True,
+                        )
+                        self.assertIn("SUNSET", result.stderr)
+                        self.assertEqual(output.read_text(), baseline)
+            rejected = subprocess.run(
+                command + ["--platform", "muse"], capture_output=True, text=True,
+            )
+            self.assertNotEqual(rejected.returncode, 0)
+
+    def test_location_profiles_are_sunset_for_all_clients(self) -> None:
+        self.assertEqual(build.PLATFORMS, ("hako", "verge", "flclash"))
+        for platform in build.PLATFORMS:
+            with self.subTest(platform=platform):
+                backcn = build.render("backcn", ["xiaohongshu.com"], [], "", platform)
+                cnip = build.render("cnip", ["xiaohongshu.com"], [], "", platform)
+                self.assertEqual(backcn, cnip)
+                self.assertIn(f"MATCH,{build.GROUP_FINAL}", backcn)
+                self.assertIn("enhanced-mode: redir-host", backcn)
+                self.assertNotIn("  - name: PROXY", backcn)
+        with self.assertRaises(ValueError):
+            build.render("", [], [], "", "muse")
 
     def test_direct_intents_are_translated(self) -> None:
         with TemporaryDirectory() as directory:
@@ -51,20 +106,15 @@ class BuildTests(unittest.TestCase):
         self.assertNotIn("proxies:\n  - name:", text)
         self.assertNotIn("password:", text)
 
-    def test_youtube_has_an_independent_select_group_in_both_profiles(self) -> None:
-        for profile in ("backcn", "cnip"):
-            text = build.render(profile, [], [], "https://dns.example/dns-query")
-            self.assertIn("  - name: YouTube\n    type: select", text)
-            self.assertIn("  - RULE-SET,youtube,YouTube", text)
-            self.assertIn(
-                '    "rule-set:youtube": "https://dns.example/dns-query#YouTube"',
-                text,
-            )
-            youtube_group = text.split("  - name: YouTube\n", 1)[1].split(
-                "rule-providers:", 1
-            )[0]
-            self.assertIn("    use:\n      - private-provider", youtube_group)
-            self.assertNotIn("default-selected:", youtube_group)
+    def test_hako_youtube_inherits_global_but_accepts_individual_nodes(self) -> None:
+        text = build.render("", [], [], "https://dns.example/dns-query")
+        self.assertIn(f"  - RULE-SET,youtube,{build.GROUP_YOUTUBE}", text)
+        self.assertIn(
+            f'    "rule-set:youtube": "https://dns.example/dns-query#{build.GROUP_YOUTUBE}"', text,
+        )
+        group = text.split(f'  - name: "{build.GROUP_YOUTUBE}"\n', 1)[1].split("  - name:", 1)[0]
+        self.assertIn(f'      - "{build.GROUP_GLOBAL}"', group)
+        self.assertIn("    use:\n      - private-provider", group)
 
     def test_game_domain_rules_keep_only_the_game_group(self) -> None:
         rules = [
@@ -505,7 +555,7 @@ class BuildTests(unittest.TestCase):
         self.assertLess(group_pos(build.GROUP_GLOBAL), group_pos(build.GROUP_FINAL))
         self.assertNotIn("geolocation-!cn", text)
         self.assertNotIn("GEOIP,!CN", text)
-        self.assertNotIn("ACL4SSR", build.render("backcn", [], [], ""))
+        self.assertIn("ACL4SSR", build.render("", [], [], ""))
         self.assertIn(
             f"{build.ACL4SSR_BASE}/Providers/ProxyGFWlist.yaml",
             text,
@@ -530,16 +580,16 @@ class BuildTests(unittest.TestCase):
                 ],
             )
 
-    def test_muse_is_a_five_group_universal_profile(self) -> None:
+    def test_hako_is_a_five_group_universal_profile(self) -> None:
         root = Path(__file__).resolve().parents[2]
         muse_rules = build.load_muse_rules(str(root / "rules" / "muse.list"))
         text = build.render(
             "backcn", ["xiaohongshu.com"], [],
-            "https://dns.example/dns-query", "muse", None, None, muse_rules,
+            "https://dns.example/dns-query", "hako", None, None, muse_rules,
         )
         same_if_cnip = build.render(
             "cnip", ["xiaohongshu.com"], [],
-            "https://dns.example/dns-query", "muse", None, None, muse_rules,
+            "https://dns.example/dns-query", "hako", None, None, muse_rules,
         )
         self.assertEqual(text, same_if_cnip)
         self.assertIn("enhanced-mode: redir-host", text)
@@ -553,7 +603,7 @@ class BuildTests(unittest.TestCase):
         self.assertNotIn(f"  - name: \"{build.GROUP_NA}\"", text)
         self.assertNotIn(f"  - name: \"{build.GROUP_GAME}\"", text)
         group_block = text.split("proxy-groups:\n", 1)[1].split("rule-providers:", 1)[0]
-        self.assertEqual(group_block.count("  - name:"), len(build.MUSE_SELECT_GROUPS) + 1)
+        self.assertEqual(group_block.count("  - name:"), len(build.HAKO_SELECT_GROUPS) + 1)
 
         def group_pos(name: str) -> int:
             return group_block.index(f"  - name: \"{name}\"")
@@ -639,7 +689,7 @@ class BuildTests(unittest.TestCase):
             f"{build.ACL4SSR_BASE}/Providers/ProxyGFWlist.yaml",
             text,
         )
-        self.assertNotIn("ACL4SSR", build.render("backcn", [], [], ""))
+        self.assertIn("ACL4SSR", build.render("", [], [], ""))
 
 
 if __name__ == "__main__":
