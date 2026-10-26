@@ -6,6 +6,39 @@ import build
 
 
 class BuildTests(unittest.TestCase):
+    def test_global_domains_override_cn_routing_and_dns_in_hako_and_verge(self) -> None:
+        root = Path(__file__).resolve().parents[2]
+        domains = build.load_domains(str(root / "rules" / "global-domains.list"))
+        for platform in ("hako", "verge", "flclash", "muse"):
+            for profile in ("backcn", "cnip"):
+                with self.subTest(platform=platform, profile=profile):
+                    text = build.render(
+                        profile, ["kbyshiyori.com"], [], "https://dns.example/dns-query",
+                        platform=platform, global_domains=domains,
+                    )
+                    rule = f"  - DOMAIN-SUFFIX,kbyshiyori.com,{build.GROUP_GLOBAL}\n"
+                    dns_policy = (
+                        '    "+.kbyshiyori.com": '
+                        f'"https://dns.example/dns-query#{build.GROUP_GLOBAL}"'
+                    )
+                    if platform not in {"hako", "verge"}:
+                        self.assertNotIn(rule, text)
+                        self.assertNotIn(dns_policy, text)
+                        continue
+                    self.assertIn(rule, text)
+                    self.assertIn(dns_policy, text)
+                    self.assertEqual(text.count('    "+.kbyshiyori.com":'), 1)
+                    self.assertLess(text.index(rule), text.index("  - RULE-SET,cn-domain,"))
+                    self.assertLess(text.index(rule), text.index("  - DOMAIN-SUFFIX,kbyshiyori.com,", text.index(rule) + len(rule)))
+                    self.assertNotIn("  - DOMAIN,pikvm.kbyshiyori.com,DIRECT", text)
+                    self.assertNotIn("    pikvm.kbyshiyori.com: system", text)
+                    if platform == "hako":
+                        default = "DIRECT" if profile == "backcn" else "PROXY"
+                        self.assertIn(
+                            f'  - name: "{build.GROUP_GLOBAL}"\n'
+                            f'    type: select\n    proxies:\n      - {default}\n', text,
+                        )
+
     def test_profiles_reverse_cn_and_fallback_policies(self) -> None:
         backcn = build.render("backcn", ["xiaohongshu.com"], [], "https://dns.example/dns-query")
         cnip = build.render("cnip", ["xiaohongshu.com"], [], "https://dns.example/dns-query")

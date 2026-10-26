@@ -46,6 +46,15 @@ Hako profiles expose a separate `YouTube` select group populated from the same p
 provider. Its selection is independent of `PROXY`; no default node is forced. YouTube DNS
 uses the foreign resolver through the node selected in that group.
 
+Hako and Verge read `rules/global-domains.list`: `kbyshiyori.com` and all its
+subdomains route through `🎯 全球直连` before China domain/IP rules. DNS for those
+suffixes uses the foreign resolver bound to that group. Hako adds a select group
+defaulting to `DIRECT` in `backcn` and `PROXY` in `cnip`; it also accepts individual
+provider nodes. `pikvm.kbyshiyori.com` follows the same global group and DNS policy;
+its previous local `DIRECT` / system DNS exceptions are removed for these profiles.
+FlClash and Muse do not consume this list.
+Use `--global-domains <path>` to supply another suffix list.
+
 ## Clash Verge Rev on Windows
 
 One published file, not backcn/cnip. Same location-switch idea as Muse/FlClash, with

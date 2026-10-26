@@ -205,7 +205,9 @@ def _rule_provider(name: str, behavior: str, fmt: str, url: str, path: str) -> l
     ]
 
 
-def _hako_dns(domains: list[str], dns: str, profile: str) -> list[str]:
+def _hako_dns(
+    domains: list[str], dns: str, profile: str, global_domains: list[str],
+) -> list[str]:
     cn_dns_route = "PROXY" if profile == "backcn" else "DIRECT"
     foreign_dns_route = "DIRECT" if profile == "backcn" else "PROXY"
     foreign_dns = dns or FOREIGN_DNS_DEFAULT
@@ -229,7 +231,14 @@ def _hako_dns(domains: list[str], dns: str, profile: str) -> list[str]:
         f"    {quote('rule-set:youtube')}: {quote(foreign_dns + '#YouTube')}",
         f"    {quote('rule-set:cn-domain')}: {quote(CN_DNS + '#' + cn_dns_route)}",
     ]
+    for domain in global_domains:
+        lines.append(
+            f"    {quote('+.' + domain)}: "
+            f"{_bound_resolver(foreign_dns, GROUP_GLOBAL)}"
+        )
     for domain in domains:
+        if domain in global_domains:
+            continue
         lines.append(
             f"    {quote('+.' + domain)}: "
             f"{quote(CN_DNS + '#' + cn_dns_route)}"
@@ -305,6 +314,7 @@ def _muse_dns(
     dns: str,
     muse_rules: list[str],
     extra_rules: list[str] | None = None,
+    local_pikvm: bool = True,
 ) -> list[str]:
     # Bind each DoH URL to the routing group. With respect-rules, a bare
     # https://1.1.1.1/dns-query is itself a connection to 1.1.1.1 and falls
@@ -328,9 +338,11 @@ def _muse_dns(
         "  nameserver-policy:",
         f"    {quote('+.lan')}: system",
         f"    {quote('+.local')}: system",
-        "    pikvm.kbyshiyori.com: system",
     ]
-    seen = {"+.lan", "+.local", "pikvm.kbyshiyori.com"}
+    seen = {"+.lan", "+.local"}
+    if local_pikvm:
+        lines.append("    pikvm.kbyshiyori.com: system")
+        seen.add("pikvm.kbyshiyori.com")
     for rule in (*muse_rules, *extra_rules):
         kind, domain, target = rule.split(",", 2)
         key = domain if kind == "DOMAIN" else "+." + domain
@@ -365,12 +377,19 @@ def render(
     android_apps: dict[str, list[str]] | None = None,
     policy_domains: list[str] | None = None,
     muse_rules: list[str] | None = None,
+    global_domains: list[str] | None = None,
 ) -> str:
     if platform not in PLATFORMS:
         raise ValueError(f"unsupported platform: {platform}")
     android_apps = android_apps or {name: [] for name in ANDROID_GROUPS}
     policy_domains = policy_domains or []
     muse_rules = muse_rules or []
+    global_domains = (global_domains or []) if platform in {"hako", "verge"} else []
+    global_rules = [f"DOMAIN-SUFFIX,{domain},{GROUP_GLOBAL}" for domain in global_domains]
+    local_pikvm = not any(
+        "pikvm.kbyshiyori.com" == domain or "pikvm.kbyshiyori.com".endswith("." + domain)
+        for domain in global_domains
+    )
     if platform == "flclash":
         cn_policy = GROUP_FINAL
         fallback = GROUP_FINAL
@@ -430,9 +449,9 @@ def render(
         lines.extend(_flclash_dns(domains, dns, policy_domains))
     elif platform in {"muse", "verge"}:
         extra_dns_rules = game_domain_rules(policy_domains) if platform == "verge" else []
-        lines.extend(_muse_dns(domains, dns, muse_rules, extra_dns_rules))
+        lines.extend(_muse_dns(domains, dns, muse_rules, global_rules + extra_dns_rules, local_pikvm))
     else:
-        lines.extend(_hako_dns(domains, dns, profile))
+        lines.extend(_hako_dns(domains, dns, profile, global_domains))
 
     lines.extend([
         "proxy-providers:",
@@ -460,6 +479,9 @@ def render(
         lines.extend(_select_group(GROUP_CN, ("DIRECT", GROUP_FINAL)))
         lines.extend(_select_group(GROUP_FINAL, ("DIRECT", "REJECT")))
     else:
+        if global_domains:
+            other_policy = "PROXY" if fallback == "DIRECT" else "DIRECT"
+            lines.extend(_select_group(GROUP_GLOBAL, (fallback, other_policy)))
         lines.extend([
             "  - name: PROXY",
             "    type: select",
@@ -488,10 +510,9 @@ def render(
             lines.extend(
                 _rule_provider(name, behavior, fmt, url, f"./rules/{name}{suffix}")
             )
-    lines.extend([
-        "rules:",
-        "  - DOMAIN,pikvm.kbyshiyori.com,DIRECT",
-    ])
+    lines.append("rules:")
+    if local_pikvm:
+        lines.append("  - DOMAIN,pikvm.kbyshiyori.com,DIRECT")
     if platform == "flclash":
         lines.extend(f"  - {rule}" for rule in policy_domains)
         for package in android_apps.get(GROUP_GAME, []):
@@ -508,6 +529,7 @@ def render(
         lines.extend(f"  - {rule}" for rule in game_domain_rules(policy_domains))
         lines.append(f"  - PROCESS-NAME,YuanShen.exe,{GROUP_GAME}")
     lines.extend(f"  - {rule}" for rule in direct_rules)
+    lines.extend(f"  - {rule}" for rule in global_rules)
     lines.extend(f"  - DOMAIN-SUFFIX,{domain},{cn_policy}" for domain in domains)
     lines.extend([
         f"  - RULE-SET,youtube,{youtube_policy}",
@@ -552,6 +574,11 @@ def main() -> int:
     parser.add_argument("--android-apps", default="", help="path to android-apps.list")
     parser.add_argument("--policy-domains", default="", help="path to policy-domains.list")
     parser.add_argument("--muse-rules", default="", help="path to muse.list")
+    parser.add_argument(
+        "--global-domains",
+        default=str(Path(__file__).resolve().parents[2] / "rules" / "global-domains.list"),
+        help="Hako / Verge domain suffixes routed through the global select group",
+    )
     parser.add_argument("--dns", default="", help="foreign DoH URL; defaults to Cloudflare")
     parser.add_argument("--out", required=True)
     args = parser.parse_args()
@@ -563,6 +590,7 @@ def main() -> int:
     android_apps = load_android_apps(args.android_apps) if args.android_apps else None
     policy_domains = load_policy_domains(args.policy_domains) if args.policy_domains else None
     muse_rules = load_muse_rules(args.muse_rules) if args.muse_rules else None
+    global_domains = load_domains(args.global_domains) if args.platform in {"hako", "verge"} else None
     profile = args.profile or "backcn"
     text = render(
         profile,
@@ -573,6 +601,7 @@ def main() -> int:
         android_apps,
         policy_domains,
         muse_rules,
+        global_domains,
     )
     out = Path(args.out)
     out.parent.mkdir(parents=True, exist_ok=True)
