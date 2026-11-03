@@ -67,9 +67,10 @@ the same file name while using different WireGuard client keys and addresses.
   ACL4SSR GFW/media for the browser), `🎮 游戏` (原神 only), `🔞 18`, `🎬 missav`, `🛡️ 安全浏览`,
   `🐟 漏网之鱼`. Abroad: set `🎯 全球直连=DIRECT`, `🐟 漏网之鱼`=China node, `🎮 游戏`=jpty1-game.
   In CN: set `🎯 全球直连`=overseas node, `🐟 漏网之鱼` / `🎮 游戏`=`DIRECT`.
-  DNS is same-side: AliDNS via `🐟 漏网之鱼` / `🎮 游戏` / `🛡️ 安全浏览`, foreign
+  Game/company domains have no dedicated FlClash routing or DNS entries.
+  DNS is same-side: AliDNS via `🐟 漏网之鱼` / `🛡️ 安全浏览`, foreign
   DoH (`--dns` / Cloudflare) via the other groups, each URL bound with a `#分组` suffix
-  (`#🎮 游戏`, `#🎯 全球直连`, …) so `respect-rules` actually dials through that exit.
+  (`#🐟 漏网之鱼`, `#🎯 全球直连`, …) so `respect-rules` actually dials through that exit.
   `geolocation-!cn` is not used.
 - **Clash Verge Rev is one 6-group profile, not backcn/cnip.** Same location switch as Hako,
   plus Windows `YuanShen.exe` and hoyoverse/mihoyo suffixes on `🎮 游戏`. `📺 YouTube`,

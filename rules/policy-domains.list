@@ -1,5 +1,6 @@
 # Destination rules that share an FlClash policy group, independent of GEOIP.
-# Clash Verge Rev reuses only the 🎮 游戏 suffixes (hoyoverse/mihoyo/原神).
+# 🎮 游戏 suffixes (hoyoverse/mihoyo/原神) apply only to Clash Verge Rev.
+# FlClash skips them for routing and DNS; 🎮 游戏 matches only the 原神 app.
 #
 # Format: domain-suffix,<domain>,<group>
 # Groups: 🇨🇦 北美 | 🎮 游戏 | 🎯 全球直连 | 🔞 18 | 🎬 missav | 🛡️ 安全浏览 | 🐟 漏网之鱼
@@ -7,7 +8,7 @@
 # Source: docs/nekobox-route-snapshot.json
 #   18 / missav stay as their own groups (do not merge into 北美 or 游戏).
 #   安全浏览 is vivo's browser CRP host.
-# 北美 / 游戏 suffixes also exist so inner DNS (no PROCESS-NAME) follows the same
+# 北美 suffixes also exist so inner DNS (no PROCESS-NAME) follows the same
 # group instead of MATCH → 漏网之鱼. YouTube stays app-only (browser uses the
 # youtube rule-set → 🎯 全球直连). Authenticator / Okta / Outlook / Slack /
 # Zoom suffixes are listed because those apps hop to the system browser

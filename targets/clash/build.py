@@ -222,10 +222,9 @@ def _flclash_dns(
     # Bind each DoH URL to the routing group. With respect-rules, a bare
     # https://1.1.1.1/dns-query is itself a connection to 1.1.1.1 and falls
     # through to MATCH / 🐟 漏网之鱼. In CN that group is DIRECT, so Cloudflare
-    # (and NextDNS) time out. 🎮 游戏 is the same location switch as 漏网之鱼
-    # (DIRECT in CN; jpty1-game abroad), so those domains use AliDNS#🎮 游戏 —
-    # NextDNS via that group still dies when the group is DIRECT. The #group
-    # suffix keeps the AliDNS dial on the same exit as the connection.
+    # (and NextDNS) time out. The #group suffix keeps the DNS dial on the
+    # selected exit. Game domains have no dedicated policy here; they use
+    # the normal rule-set policies or default AliDNS via 漏网之鱼.
     foreign_dns = dns or FOREIGN_DNS_DEFAULT
     lines = [
         "dns:",
@@ -354,6 +353,11 @@ def render(
         for domain in global_domains
     )
     if platform == "flclash":
+        # Game suffixes are desktop-only. Android routes 原神 by package;
+        # company websites and their DNS use the normal fallback policies.
+        policy_domains = [
+            rule for rule in policy_domains if not rule.endswith(f",{GROUP_GAME}")
+        ]
         cn_policy = GROUP_FINAL
         fallback = GROUP_FINAL
         foreign_policy = GROUP_GLOBAL
