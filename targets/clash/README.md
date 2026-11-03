@@ -93,7 +93,8 @@ publishing them in the rules repo.
 原神 routing is app/process-based rather than tied to server IPs. This repository encodes
 Windows as `YuanShen.exe` → `🎮 游戏` in the Verge profile, and Android as
 `com.miHoYo.Yuanshen` → `🎮 游戏` in the FlClash profile. Game websites (hoyoverse/mihoyo)
-use the same group via domain suffixes.
+use the same group via domain suffixes on Verge only. FlClash omits those suffixes
+from routing and DNS policies, allowing them to follow the normal rules and fallback.
 
 ## FlClash on Android
 
@@ -105,7 +106,7 @@ subscription.
 | `🔞 18` | `18comic.vip`, `hanime1.me` | US/PayPal node |
 | `🎬 missav` | `missav.ai`, `missav.ws` | JP/game node |
 | `🛡️ 安全浏览` | `browsercrp.vivo.com.cn` | usually `DIRECT` |
-| `🎮 游戏` | 原神 (`com.miHoYo.Yuanshen`) **and** hoyoverse/mihoyo suffixes | `DIRECT` when in CN; jpty1-game abroad (JP exit, lower latency to 国服 than naked JP) |
+| `🎮 游戏` | 原神 app only (`com.miHoYo.Yuanshen`) | `DIRECT` when in CN; jpty1-game abroad (JP exit, lower latency to 国服 than naked JP) |
 | `🇨🇦 北美` | US banks, YouTube **app**, Muse, work/login apps (Authenticator, Okta Verify, Outlook, Slack, Zoom), plus matching suffixes (banks, Slack, Okta, Zoom, Entra/Outlook login hosts) | CA/PayPal node |
 | `🎯 全球直连` | the NekoBox 绕过 apps (minus YouTube/T-Life/Muse/work-login apps), Tailscale (`com.tailscale.ipn` plus `tailscale.com` / `tailscale.io`), Claude (`com.anthropic.claude` plus `claude.ai` / `anthropic.com` / `claudeusercontent.com`), Grok (`ai.x.grok` plus `grok.com` / `x.ai`), Bitwarden (`com.x8bit.bitwarden` plus `bitwarden.com` / `bitwarden.net` / `bitwarden.eu` / `vault.kbyshiyori.com`), iCloud suffixes (`icloud.com`, `icloud-content.com`, CloudKit, `me.com` / `mac.com`, Private Relay), **and** ACL4SSR `ProxyGFWlist` / `ProxyMedia` / `Telegram` for the browser | `DIRECT` when abroad; an overseas node when in CN |
 | `🐟 漏网之鱼` | CN lists, `redirect-to-cn`, `GEOIP,CN`, unmatched `MATCH` | China node when abroad; `DIRECT` when in CN |
@@ -116,15 +117,14 @@ Apps are `PROCESS-NAME` so they do not depend on foreign IP; ACL4SSR lists are f
 browser. `geolocation-!cn` is not used.
 
 DNS uses `redir-host` + `respect-rules`, with each DoH URL bound to its routing group
-(`https://…#🎮 游戏`, `#🇨🇦 北美`, `#🎯 全球直连`, `#🐟 漏网之鱼`, …). AliDNS
-(`https://223.5.5.5/dns-query`) for CN-side names (`🐟 漏网之鱼`, `🎮 游戏`, `🛡️ 安全浏览`, CN
+(`https://…#🇨🇦 北美`, `#🎯 全球直连`, `#🐟 漏网之鱼`, …). AliDNS
+(`https://223.5.5.5/dns-query`) for CN-side names (`🐟 漏网之鱼`, `🛡️ 安全浏览`, CN
 rule-sets, `redirect-to-cn`) and `--dns` (Cloudflare if unset) for foreign-side names
 (`🎯 全球直连`, `🔞 18`, `🎬 missav`, `🇨🇦 北美`, GFW/media/Telegram/YouTube).
 `🎮 游戏` uses the same location switch as `🐟 漏网之鱼`: `DIRECT` in CN, a node abroad.
-Binding those domains to NextDNS/`#🎮 游戏` still times out when the group is `DIRECT`,
-so they stay on AliDNS. The `#group` suffix keeps that AliDNS dial on the same exit as
-the connection (DIRECT in CN; jpty1-game abroad). Node hostnames still use `system`. Inner DNS has no
-`PROCESS-NAME`, so 北美/游戏 company suffixes live in `policy-domains.list`. YouTube
+Game/company domains have no dedicated routing or DNS entries in FlClash; unmatched
+names use AliDNS via `🐟 漏网之鱼`. Node hostnames still use `system`. Inner DNS has no
+`PROCESS-NAME`, so 北美 company suffixes live in `policy-domains.list`. YouTube
 **app** traffic stays `🇨🇦 北美`; YouTube **DNS** follows the youtube rule-set
 (`🎯 全球直连`) — both foreign. Slack / Okta / Zoom / Outlook / Entra suffixes
 share `🇨🇦 北美` with the apps so a browser SSO hop does not fall through to

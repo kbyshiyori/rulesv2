@@ -395,14 +395,8 @@ class BuildTests(unittest.TestCase):
             f'    "+.icloud.com.cn": "https://dns.example/dns-query#{build.GROUP_GLOBAL}"',
             text,
         )
-        self.assertIn(
-            f'    "+.hoyoverse.com": "https://223.5.5.5/dns-query#{build.GROUP_GAME}"',
-            text,
-        )
-        self.assertIn(
-            f'    "+.mihoyo.com": "https://223.5.5.5/dns-query#{build.GROUP_GAME}"',
-            text,
-        )
+        self.assertNotIn('"+.hoyoverse.com":', text)
+        self.assertNotIn('"+.mihoyo.com":', text)
         self.assertIn(
             f'    "rule-set:youtube": "https://dns.example/dns-query#{build.GROUP_GLOBAL}"',
             text,
@@ -428,14 +422,7 @@ class BuildTests(unittest.TestCase):
             f'    "rule-set:youtube": "https://1.1.1.1/dns-query#{build.GROUP_GLOBAL}"',
             default_dns,
         )
-        self.assertIn(
-            f'    "+.hoyoverse.com": "https://223.5.5.5/dns-query#{build.GROUP_GAME}"',
-            default_dns,
-        )
-        self.assertNotIn(
-            f'    "+.hoyoverse.com": "https://1.1.1.1/dns-query#{build.GROUP_GAME}"',
-            default_dns,
-        )
+        self.assertNotIn('"+.hoyoverse.com":', default_dns)
         self.assertNotIn("dns.example", default_dns)
         self.assertIn(f"PROCESS-NAME,com.chase.sig.android,{build.GROUP_NA}", text)
         self.assertIn(f"PROCESS-NAME,com.miHoYo.Yuanshen,{build.GROUP_GAME}", text)
@@ -495,7 +482,17 @@ class BuildTests(unittest.TestCase):
         self.assertNotIn(f"DOMAIN-SUFFIX,ts.net,{build.GROUP_NA}", text)
         self.assertNotIn(f"DOMAIN-SUFFIX,ts.net,{build.GROUP_GLOBAL}", text)
         self.assertIn(f"DOMAIN-SUFFIX,outlook.com,{build.GROUP_NA}", text)
-        self.assertIn(f"DOMAIN-SUFFIX,hoyoverse.com,{build.GROUP_GAME}", text)
+        for rule in build.game_domain_rules(policy_domains):
+            domain = rule.split(",")[1]
+            self.assertNotIn(f"DOMAIN-SUFFIX,{domain},", text)
+            self.assertNotIn(f'"+.{domain}":', text)
+        game_rules = [
+            line.strip() for line in text.split("rules:\n", 1)[1].splitlines()
+            if line.endswith(f",{build.GROUP_GAME}")
+        ]
+        self.assertEqual(
+            game_rules, [f"- PROCESS-NAME,com.miHoYo.Yuanshen,{build.GROUP_GAME}"]
+        )
         self.assertNotIn(f"DOMAIN-SUFFIX,18comic.vip,{build.GROUP_NA}", text)
         self.assertNotIn(f"DOMAIN-SUFFIX,missav.ai,{build.GROUP_GAME}", text)
         self.assertIn(f"  - name: \"{build.GROUP_FINAL}\"\n    type: select", text)
@@ -521,10 +518,6 @@ class BuildTests(unittest.TestCase):
         )
         self.assertLess(
             text.index(f"DOMAIN-SUFFIX,browsercrp.vivo.com.cn,{build.GROUP_SAFE}"),
-            text.index(f"DOMAIN-SUFFIX,hoyoverse.com,{build.GROUP_GAME}"),
-        )
-        self.assertLess(
-            text.index(f"DOMAIN-SUFFIX,hoyoverse.com,{build.GROUP_GAME}"),
             text.index(f"DOMAIN-SUFFIX,chase.com,{build.GROUP_NA}"),
         )
         self.assertLess(
